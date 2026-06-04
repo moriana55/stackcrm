@@ -47,7 +47,7 @@ async function AppointmentsContent({ tenantId }: { tenantId: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* New Appointment Form */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">New Appointment</h2>
@@ -82,7 +82,7 @@ async function AppointmentsContent({ tenantId }: { tenantId: string }) {
         </div>
 
         {/* Appointment List */}
-        <div className="col-span-2 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 overflow-x-auto">
           {list.length > 0 ? (
             <table className="w-full">
               <thead>

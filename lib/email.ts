@@ -1,0 +1,75 @@
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM = process.env.EMAIL_FROM || "BridalStack <noreply@bridalstack.com>";
+
+export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[EMAIL SKIP] to=${to} subject=${subject}`);
+    return;
+  }
+
+  await resend.emails.send({ from: FROM, to, subject, html });
+}
+
+export function appointmentReminderEmail(customerName: string, shopName: string, date: string, time: string) {
+  return {
+    subject: `Appointment Reminder — ${shopName}`,
+    html: `
+      <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+        <h2 style="color: #111; margin-bottom: 8px;">Hi ${customerName} 👋</h2>
+        <p style="color: #555; line-height: 1.6;">
+          This is a reminder that you have an upcoming appointment at <strong>${shopName}</strong>.
+        </p>
+        <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0; color: #111; font-size: 18px; font-weight: 600;">📅 ${date}</p>
+          <p style="margin: 4px 0 0; color: #555;">🕐 ${time}</p>
+        </div>
+        <p style="color: #555; line-height: 1.6;">
+          We look forward to seeing you! If you need to reschedule, please contact us.
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 32px;">Sent via BridalStack</p>
+      </div>
+    `,
+  };
+}
+
+export function paymentReminderEmail(customerName: string, shopName: string, amount: string, dueDate: string) {
+  return {
+    subject: `Payment Reminder — ${shopName}`,
+    html: `
+      <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+        <h2 style="color: #111; margin-bottom: 8px;">Hi ${customerName} 👋</h2>
+        <p style="color: #555; line-height: 1.6;">
+          You have an upcoming payment due at <strong>${shopName}</strong>.
+        </p>
+        <div style="background: #fef2f2; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0; color: #111; font-size: 24px; font-weight: 700;">${amount}</p>
+          <p style="margin: 4px 0 0; color: #b91c1c;">Due: ${dueDate}</p>
+        </div>
+        <p style="color: #555; line-height: 1.6;">
+          Please contact us if you have any questions about your payment.
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 32px;">Sent via BridalStack</p>
+      </div>
+    `,
+  };
+}
+
+export function welcomeEmail(customerName: string, shopName: string) {
+  return {
+    subject: `Welcome to ${shopName}!`,
+    html: `
+      <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+        <h2 style="color: #111; margin-bottom: 8px;">Welcome, ${customerName}! 🎉</h2>
+        <p style="color: #555; line-height: 1.6;">
+          Thank you for choosing <strong>${shopName}</strong>. We're excited to help you find your perfect look.
+        </p>
+        <p style="color: #555; line-height: 1.6;">
+          We'll keep you updated on your appointments, orders, and everything in between.
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 32px;">Sent via BridalStack</p>
+      </div>
+    `,
+  };
+}

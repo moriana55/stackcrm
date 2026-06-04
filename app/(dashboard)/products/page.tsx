@@ -3,8 +3,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentTenant } from "@/lib/tenant";
 import ModuleGuard from "@/components/module-guard";
+import SearchBar from "@/components/search-bar";
 
-export default async function ProductsPage() {
+type PageProps = { searchParams?: Promise<{ q?: string }> };
+
+export default async function ProductsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -14,20 +18,20 @@ export default async function ProductsPage() {
 
   return (
     <ModuleGuard moduleId="inventory" enabledModules={tenant.enabled_modules}>
-      <ProductsContent tenantId={tenant.id} />
+      <ProductsContent tenantId={tenant.id} query={params?.q ?? ""} />
     </ModuleGuard>
   );
 }
 
-async function ProductsContent({ tenantId }: { tenantId: string }) {
+async function ProductsContent({ tenantId, query }: { tenantId: string; query: string }) {
   const supabase = await createClient();
 
-  const { data: products, count } = await supabase
-    .from("products")
-    .select("*", { count: "exact" })
-    .eq("tenant_id", tenantId)
-    .order("created_at", { ascending: false })
-    .limit(50);
+  let q = supabase.from("products").select("*", { count: "exact" }).eq("tenant_id", tenantId);
+  if (query) {
+    const p = `%${query}%`;
+    q = q.or(`name.ilike.${p},sku.ilike.${p},barcode.ilike.${p},category.ilike.${p}`);
+  }
+  const { data: products, count } = await q.order("created_at", { ascending: false }).limit(50);
 
   const list = products ?? [];
 
@@ -44,8 +48,12 @@ async function ProductsContent({ tenantId }: { tenantId: string }) {
         </Link>
       </div>
 
+      <div className="mb-4">
+        <SearchBar placeholder="Search by name, SKU, barcode, category..." basePath="/products" />
+      </div>
+
       {list.length > 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">

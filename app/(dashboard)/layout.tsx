@@ -17,8 +17,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen">
       <Sidebar groups={navGroups} tenantName={tenant.name} />
-      <main className="ml-64 min-h-screen">
-        <div className="max-w-7xl mx-auto px-8 py-8">
+      <main className="lg:ml-64 min-h-screen pt-14 lg:pt-0">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
           {children}
         </div>
       </main>
