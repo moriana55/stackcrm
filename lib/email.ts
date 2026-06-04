@@ -1,10 +1,10 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = process.env.EMAIL_FROM || "BridalStack <noreply@bridalstack.com>";
 
 export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
-  if (!process.env.RESEND_API_KEY) {
+  if (!resend) {
     console.log(`[EMAIL SKIP] to=${to} subject=${subject}`);
     return;
   }
