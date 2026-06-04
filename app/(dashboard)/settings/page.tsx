@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentTenant } from "@/lib/tenant";
 import { PACKS, MODULES, ALL_PACK_IDS, calculateMonthlyPrice } from "@/config/modules";
+import { UpgradeButton, ManageBillingButton } from "@/components/billing-buttons";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -33,6 +34,18 @@ export default async function SettingsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
               <div className="px-4 py-2.5 rounded-xl bg-gray-50 text-sm text-gray-900 capitalize">{tenant.plan}</div>
             </div>
+          </div>
+        </div>
+
+        {/* Billing */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Subscription</h2>
+            <div className="text-sm font-medium text-gray-500">${currentPrice}/mo</div>
+          </div>
+          <div className="flex gap-3 mb-6">
+            <UpgradeButton currentPacks={tenant.packs} />
+            {(tenant.settings as Record<string, string>)?.stripe_customer_id && <ManageBillingButton />}
           </div>
         </div>
 
