@@ -70,7 +70,7 @@ async function CustomersContent({ tenantId, query }: { tenantId: string; query: 
             <tbody className="divide-y divide-gray-50">
               {list.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4"><span className="font-medium text-gray-900">{c.name}</span></td>
+                  <td className="px-6 py-4"><Link href={`/customers/${c.id}`} className="font-medium text-gray-900 hover:text-rose-600">{c.name}</Link></td>
                   <td className="px-6 py-4 text-sm text-gray-600">{c.phone ?? "—"}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{c.email ?? "—"}</td>
                   <td className="px-6 py-4">

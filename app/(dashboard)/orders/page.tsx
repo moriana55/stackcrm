@@ -80,7 +80,7 @@ async function OrdersContent({ tenantId, query }: { tenantId: string; query: str
                 const cust = (Array.isArray(o.customers) ? o.customers[0] : o.customers) as { name: string } | null;
                 return (
                   <tr key={o.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-mono font-medium text-gray-900">{o.ref_no}</td>
+                    <td className="px-6 py-4 text-sm font-mono font-medium"><Link href={`/orders/${o.id}`} className="text-gray-900 hover:text-rose-600">{o.ref_no}</Link></td>
                     <td className="px-6 py-4 text-sm text-gray-900">{cust?.name ?? "—"}</td>
                     <td className="px-6 py-4">
                       <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 capitalize">{o.order_type}</span>
