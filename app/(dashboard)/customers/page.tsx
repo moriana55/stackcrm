@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentTenant } from "@/lib/tenant";
 import ModuleGuard from "@/components/module-guard";
 import SearchBar from "@/components/search-bar";
+import PortalLinkButton from "@/components/portal-link-button";
 
 type PageProps = { searchParams?: Promise<{ q?: string }> };
 
@@ -63,6 +64,7 @@ async function CustomersContent({ tenantId, query }: { tenantId: string; query: 
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Added</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Portal</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -76,6 +78,9 @@ async function CustomersContent({ tenantId, query }: { tenantId: string; query: 
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-400">
                     {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </td>
+                  <td className="px-6 py-4">
+                    <PortalLinkButton customerId={c.id} />
                   </td>
                 </tr>
               ))}

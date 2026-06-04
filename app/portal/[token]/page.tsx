@@ -1,0 +1,143 @@
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
+
+type Props = { params: Promise<{ token: string }> };
+
+export default async function ClientPortalPage({ params }: Props) {
+  const { token } = await params;
+  const supabase = await createClient();
+
+  const { data: portal } = await supabase
+    .from("portal_tokens")
+    .select("tenant_id, customer_id, tenants(name, logo_url, accent_color)")
+    .eq("token", token)
+    .maybeSingle();
+
+  if (!portal) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Link Expired</h1>
+          <p className="text-gray-500">This portal link is no longer valid. Please contact your stylist.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const tenant = (Array.isArray(portal.tenants) ? portal.tenants[0] : portal.tenants) as { name: string; logo_url: string | null; accent_color: string | null } | null;
+  const shopName = tenant?.name ?? "Bridal Shop";
+  const accent = tenant?.accent_color ?? "#e11d48";
+
+  const [{ data: customer }, { data: appointments }, { data: orders }, { data: tryOns }] = await Promise.all([
+    supabase.from("customers").select("name, phone, email, metadata").eq("id", portal.customer_id).single(),
+    supabase.from("appointments").select("title, appointment_date, status").eq("customer_id", portal.customer_id).order("appointment_date", { ascending: true }).limit(10),
+    supabase.from("orders").select("ref_no, order_type, status, discounted_total, remaining_balance, delivery_date").eq("customer_id", portal.customer_id).order("created_at", { ascending: false }).limit(10),
+    supabase.from("try_ons").select("reaction, rating, notes, photo_urls, created_at, products(name, category)").eq("customer_id", portal.customer_id).order("created_at", { ascending: false }).limit(20),
+  ]);
+
+  const REACTION_EMOJI: Record<string, string> = { loved: "😍", liked: "👍", maybe: "🤔", no: "👎" };
+  const STATUS_LABEL: Record<string, string> = { pending: "Upcoming", confirmed: "Confirmed", completed: "Done", cancelled: "Cancelled", draft: "Processing", delivered: "Delivered" };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-100 px-6 py-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">{shopName}</h1>
+        <p className="text-gray-500 mt-1">Welcome, {customer?.name ?? "Bride"} ✨</p>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
+        {/* Appointments */}
+        {(appointments ?? []).length > 0 && (
+          <section className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined" style={{ color: accent }}>event</span>
+              Your Appointments
+            </h2>
+            <div className="flex flex-col gap-3">
+              {appointments!.map((a, i) => {
+                const dt = new Date(a.appointment_date);
+                const isPast = dt < new Date();
+                return (
+                  <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${isPast ? "bg-gray-50" : "bg-rose-50"}`}>
+                    <div>
+                      <div className="font-medium text-gray-900 text-sm">{a.title ?? "Appointment"}</div>
+                      <div className="text-xs text-gray-500">
+                        {dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                      </div>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${a.status === "confirmed" ? "bg-blue-100 text-blue-700" : a.status === "completed" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                      {STATUS_LABEL[a.status] ?? a.status}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Orders */}
+        {(orders ?? []).length > 0 && (
+          <section className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined" style={{ color: accent }}>receipt_long</span>
+              Your Orders
+            </h2>
+            <div className="flex flex-col gap-3">
+              {orders!.map((o, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                  <div>
+                    <div className="font-medium text-gray-900 text-sm">{o.ref_no} · <span className="capitalize">{o.order_type}</span></div>
+                    {o.delivery_date && <div className="text-xs text-gray-500">Delivery: {new Date(o.delivery_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>}
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900 text-sm">${Number(o.discounted_total).toLocaleString()}</div>
+                    {Number(o.remaining_balance) > 0 && (
+                      <div className="text-xs text-red-600">Balance: ${Number(o.remaining_balance).toLocaleString()}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Try-On History */}
+        {(tryOns ?? []).length > 0 && (
+          <section className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined" style={{ color: accent }}>checkroom</span>
+              Gowns You Tried
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {tryOns!.map((t, i) => {
+                const product = (Array.isArray(t.products) ? t.products[0] : t.products) as { name: string; category: string | null } | null;
+                return (
+                  <div key={i} className="p-4 rounded-xl border border-gray-100 hover:border-gray-300 transition-colors">
+                    {(t.photo_urls as string[])?.length > 0 && (
+                      <img src={(t.photo_urls as string[])[0]} alt={product?.name ?? ""} className="w-full h-40 object-cover rounded-lg mb-3" />
+                    )}
+                    <div className="font-medium text-gray-900 text-sm">{product?.name ?? "Gown"}</div>
+                    {product?.category && <div className="text-xs text-gray-400">{product.category}</div>}
+                    <div className="flex items-center gap-2 mt-2">
+                      {t.reaction && <span className="text-lg">{REACTION_EMOJI[t.reaction] ?? ""}</span>}
+                      {t.rating && (
+                        <span className="text-xs text-gray-500">{"★".repeat(t.rating)}{"☆".repeat(5 - t.rating)}</span>
+                      )}
+                    </div>
+                    {t.notes && <p className="text-xs text-gray-500 mt-1">{t.notes}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Footer */}
+        <footer className="text-center py-6">
+          <p className="text-xs text-gray-400">Powered by <Link href="/landing" className="text-rose-500 hover:underline">BridalStack</Link></p>
+        </footer>
+      </div>
+    </div>
+  );
+}
