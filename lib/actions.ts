@@ -1,0 +1,136 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentTenant } from "@/lib/tenant";
+
+async function requireAuth() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const tenant = await getCurrentTenant();
+  if (!tenant) redirect("/onboarding");
+  return { supabase, user, tenant };
+}
+
+// ─── Customers ───
+
+export async function createCustomer(formData: FormData) {
+  const { supabase, user, tenant } = await requireAuth();
+
+  const name = String(formData.get("name") || "").trim();
+  const phone = String(formData.get("phone") || "").trim() || null;
+  const email = String(formData.get("email") || "").trim() || null;
+  const notes = String(formData.get("notes") || "").trim() || null;
+
+  if (!name) redirect("/customers/new?error=required");
+
+  const { error } = await supabase.from("customers").insert({
+    tenant_id: tenant.id, name, phone, email, notes, created_by: user.id,
+  });
+
+  if (error) redirect("/customers/new?error=insert");
+  revalidatePath("/customers");
+  redirect("/customers?success=created");
+}
+
+// ─── Appointments ───
+
+export async function createAppointment(formData: FormData) {
+  const { supabase, user, tenant } = await requireAuth();
+
+  const customer_id = String(formData.get("customer_id") || "").trim();
+  const title = String(formData.get("title") || "").trim() || "Appointment";
+  const description = String(formData.get("description") || "").trim() || null;
+  const date = String(formData.get("date") || "").trim();
+  const time = String(formData.get("time") || "10:00").trim();
+
+  if (!customer_id || !date) redirect("/appointments?error=required");
+
+  const { error } = await supabase.from("appointments").insert({
+    tenant_id: tenant.id, customer_id, title, description,
+    appointment_date: `${date}T${time}`,
+    created_by: user.id,
+  });
+
+  if (error) redirect("/appointments?error=insert");
+  revalidatePath("/appointments");
+  redirect("/appointments?success=created");
+}
+
+export async function updateAppointmentStatus(formData: FormData) {
+  const { supabase } = await requireAuth();
+
+  const id = String(formData.get("id") || "").trim();
+  const status = String(formData.get("status") || "").trim();
+  if (!id || !status) return;
+
+  await supabase.from("appointments").update({ status }).eq("id", id);
+  revalidatePath("/appointments");
+}
+
+// ─── Products ───
+
+export async function createProduct(formData: FormData) {
+  const { supabase, user, tenant } = await requireAuth();
+
+  const name = String(formData.get("name") || "").trim();
+  const sku = String(formData.get("sku") || "").trim() || null;
+  const category = String(formData.get("category") || "").trim() || null;
+  const price = parseFloat(String(formData.get("price") || "0")) || 0;
+  const cost = parseFloat(String(formData.get("cost") || "0")) || 0;
+  const stock_quantity = parseInt(String(formData.get("stock_quantity") || "1")) || 1;
+  const description = String(formData.get("description") || "").trim() || null;
+
+  if (!name) redirect("/products/new?error=required");
+
+  const prefix = (category ?? "XX").substring(0, 2).toUpperCase();
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+  const barcode = `${prefix}-${ts}-${rand}`;
+
+  const { error } = await supabase.from("products").insert({
+    tenant_id: tenant.id, name, barcode, sku, category, price, cost,
+    stock_quantity, description, created_by: user.id,
+  });
+
+  if (error) redirect("/products/new?error=insert");
+  revalidatePath("/products");
+  redirect("/products?success=created");
+}
+
+// ─── Orders ───
+
+export async function createOrder(formData: FormData) {
+  const { supabase, user, tenant } = await requireAuth();
+
+  const customer_id = String(formData.get("customer_id") || "").trim();
+  const order_type = String(formData.get("order_type") || "sale").trim();
+  const order_date = String(formData.get("order_date") || new Date().toISOString().split("T")[0]).trim();
+  const delivery_date = String(formData.get("delivery_date") || "").trim() || null;
+  const sales_person = String(formData.get("sales_person") || "").trim() || null;
+  const discounted_total = parseFloat(String(formData.get("discounted_total") || "0")) || 0;
+  const deposit_amount = parseFloat(String(formData.get("deposit_amount") || "0")) || 0;
+  const notes = String(formData.get("notes") || "").trim() || null;
+
+  if (!customer_id) redirect("/orders/new?error=required");
+
+  const y = String(new Date().getFullYear()).slice(2);
+  const m = String(new Date().getMonth() + 1).padStart(2, "0");
+  const d = String(new Date().getDate()).padStart(2, "0");
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const ref_no = `S${y}${m}${d}-${rand}`;
+
+  const { error } = await supabase.from("orders").insert({
+    tenant_id: tenant.id, ref_no, customer_id, order_type, order_date,
+    delivery_date: delivery_date && /^\d{4}-\d{2}-\d{2}$/.test(delivery_date) ? delivery_date : null,
+    sales_person, discounted_total, deposit_amount,
+    remaining_balance: Math.max(0, discounted_total - deposit_amount),
+    list_total: discounted_total, notes, created_by: user.id,
+  });
+
+  if (error) redirect("/orders/new?error=insert");
+  revalidatePath("/orders");
+  redirect("/orders?success=created");
+}
