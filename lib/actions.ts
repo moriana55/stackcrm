@@ -3,21 +3,27 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentTenant } from "@/lib/tenant";
+import { getCurrentTenant, getCurrentMember } from "@/lib/tenant";
+import { hasPermission, type Permission } from "@/lib/rbac";
 
-async function requireAuth() {
+// Auth + tenant + (opsiyonel) izin kapısı. Fail-closed: yetkisiz reddedilir.
+async function requireAuth(permission?: Permission, denyRedirect = "/dashboard?error=forbidden") {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const tenant = await getCurrentTenant();
   if (!tenant) redirect("/onboarding");
+  if (permission) {
+    const member = await getCurrentMember();
+    if (!hasPermission(member?.role, permission)) redirect(denyRedirect);
+  }
   return { supabase, user, tenant };
 }
 
 // ─── Customers ───
 
 export async function createCustomer(formData: FormData) {
-  const { supabase, user, tenant } = await requireAuth();
+  const { supabase, user, tenant } = await requireAuth("customers.manage", "/customers?error=forbidden");
 
   const name = String(formData.get("name") || "").trim();
   const phone = String(formData.get("phone") || "").trim() || null;
@@ -38,7 +44,7 @@ export async function createCustomer(formData: FormData) {
 // ─── Appointments ───
 
 export async function createAppointment(formData: FormData) {
-  const { supabase, user, tenant } = await requireAuth();
+  const { supabase, user, tenant } = await requireAuth("appointments.manage", "/appointments?error=forbidden");
 
   const customer_id = String(formData.get("customer_id") || "").trim();
   const title = String(formData.get("title") || "").trim() || "Appointment";
@@ -60,20 +66,20 @@ export async function createAppointment(formData: FormData) {
 }
 
 export async function updateAppointmentStatus(formData: FormData) {
-  const { supabase } = await requireAuth();
+  const { supabase, tenant } = await requireAuth("appointments.manage", "/appointments?error=forbidden");
 
   const id = String(formData.get("id") || "").trim();
   const status = String(formData.get("status") || "").trim();
   if (!id || !status) return;
 
-  await supabase.from("appointments").update({ status }).eq("id", id);
+  await supabase.from("appointments").update({ status }).eq("id", id).eq("tenant_id", tenant.id);
   revalidatePath("/appointments");
 }
 
 // ─── Products ───
 
 export async function createProduct(formData: FormData) {
-  const { supabase, user, tenant } = await requireAuth();
+  const { supabase, user, tenant } = await requireAuth("products.manage", "/products?error=forbidden");
 
   const name = String(formData.get("name") || "").trim();
   const sku = String(formData.get("sku") || "").trim() || null;
@@ -82,13 +88,17 @@ export async function createProduct(formData: FormData) {
   const cost = parseFloat(String(formData.get("cost") || "0")) || 0;
   const stock_quantity = parseInt(String(formData.get("stock_quantity") || "1")) || 1;
   const description = String(formData.get("description") || "").trim() || null;
+  const barcodeInput = String(formData.get("barcode") || "").trim();
 
   if (!name) redirect("/products/new?error=required");
 
-  const prefix = (category ?? "XX").substring(0, 2).toUpperCase();
-  const ts = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
-  const barcode = `${prefix}-${ts}-${rand}`;
+  let barcode = barcodeInput;
+  if (!barcode) {
+    const prefix = (category ?? "XX").substring(0, 2).toUpperCase();
+    const ts = Date.now().toString(36).toUpperCase();
+    const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+    barcode = `${prefix}-${ts}-${rand}`;
+  }
 
   const { error } = await supabase.from("products").insert({
     tenant_id: tenant.id, name, barcode, sku, category, price, cost,
@@ -103,7 +113,7 @@ export async function createProduct(formData: FormData) {
 // ─── Orders ───
 
 export async function createOrder(formData: FormData) {
-  const { supabase, user, tenant } = await requireAuth();
+  const { supabase, user, tenant } = await requireAuth("orders.manage", "/orders?error=forbidden");
 
   const customer_id = String(formData.get("customer_id") || "").trim();
   const order_type = String(formData.get("order_type") || "sale").trim();

@@ -44,10 +44,16 @@ async function CustomersContent({ tenantId, query }: { tenantId: string; query: 
           <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
           <p className="text-sm text-gray-500 mt-1">{count ?? 0} total</p>
         </div>
-        <Link href="/customers/new" className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
-          <span className="material-symbols-outlined text-lg">add</span>
-          New Customer
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/customers/import" className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+            <span className="material-symbols-outlined text-lg">upload_file</span>
+            İçe Aktar
+          </Link>
+          <Link href="/customers/new" className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
+            <span className="material-symbols-outlined text-lg">add</span>
+            New Customer
+          </Link>
+        </div>
       </div>
 
       <div className="mb-4">

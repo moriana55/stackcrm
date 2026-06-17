@@ -26,18 +26,22 @@ export async function createWorkflow(formData: FormData) {
 
 export async function toggleWorkflow(formData: FormData) {
   const supabase = await createClient();
+  const tenant = await getCurrentTenant();
+  if (!tenant) redirect("/onboarding");
   const id = String(formData.get("id") || "").trim();
   const is_active = String(formData.get("is_active")) === "true";
   if (!id) return;
-  await supabase.from("workflows").update({ is_active }).eq("id", id);
+  await supabase.from("workflows").update({ is_active }).eq("id", id).eq("tenant_id", tenant.id);
   revalidatePath("/workflows");
 }
 
 export async function deleteWorkflow(formData: FormData) {
   const supabase = await createClient();
+  const tenant = await getCurrentTenant();
+  if (!tenant) redirect("/onboarding");
   const id = String(formData.get("id") || "").trim();
   if (!id) return;
-  await supabase.from("workflows").delete().eq("id", id);
+  await supabase.from("workflows").delete().eq("id", id).eq("tenant_id", tenant.id);
   revalidatePath("/workflows");
   redirect("/workflows");
 }

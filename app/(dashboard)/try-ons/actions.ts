@@ -27,7 +27,7 @@ export async function addTryOn(formData: FormData) {
 
   await supabase.from("products").update({
     lifecycle_stage: "in_fitting", lifecycle_updated_at: new Date().toISOString(),
-  }).eq("id", product_id);
+  }).eq("id", product_id).eq("tenant_id", tenant.id);
 
   await supabase.from("product_lifecycle_log").insert({
     tenant_id: tenant.id, product_id, to_stage: "in_fitting", notes: `Try-on by customer`, created_by: user.id,

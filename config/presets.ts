@@ -6,49 +6,62 @@ export type IndustryPreset = {
   description: string;
   icon: string;
   packs: PackId[];
-  customConfig?: Record<string, unknown>;
 };
 
 export const PRESETS: IndustryPreset[] = [
   {
+    id: "hair_salon",
+    name: "Hair Salon",
+    description: "Appointments, services, staff scheduling, online booking",
+    icon: "content_cut",
+    packs: ["base", "salon", "sales", "finance"],
+  },
+  {
+    id: "barber",
+    name: "Barber Shop",
+    description: "Walk-ins, bookings, POS, commissions",
+    icon: "face",
+    packs: ["base", "salon", "sales", "pro"],
+  },
+  {
+    id: "nail_salon",
+    name: "Nail Salon",
+    description: "Nail services, booking, loyalty programs",
+    icon: "spa",
+    packs: ["base", "salon", "sales"],
+  },
+  {
+    id: "spa",
+    name: "Spa & Wellness",
+    description: "Treatments, packages, multi-room scheduling",
+    icon: "self_improvement",
+    packs: ["base", "salon", "sales", "finance", "inventory"],
+  },
+  {
+    id: "tattoo",
+    name: "Tattoo Studio",
+    description: "Consultations, deposits, portfolio, aftercare",
+    icon: "brush",
+    packs: ["base", "salon", "sales"],
+  },
+  {
+    id: "clinic",
+    name: "Aesthetics Clinic",
+    description: "Medical spa, treatments, patient records",
+    icon: "medical_services",
+    packs: ["base", "salon", "sales", "finance", "inventory"],
+  },
+  {
     id: "bridal",
-    name: "Gelinlik Mağazası",
-    description: "Gelinlik satış/kiralama, prova, tadilat, kuru temizleme",
+    name: "Bridal Shop",
+    description: "Gown sales/rental, try-ons, alterations",
     icon: "checkroom",
     packs: ["base", "sales", "finance", "inventory", "pro"],
   },
   {
-    id: "retail",
-    name: "Perakende Mağaza",
-    description: "Genel perakende satış, stok takibi, kasa",
-    icon: "storefront",
-    packs: ["base", "sales", "finance", "inventory"],
-  },
-  {
-    id: "service",
-    name: "Hizmet Sektörü",
-    description: "Randevu bazlı hizmet, müşteri takibi",
-    icon: "handyman",
-    packs: ["base", "sales", "finance"],
-  },
-  {
-    id: "clinic",
-    name: "Klinik / Salon",
-    description: "Randevu, müşteri kartı, WhatsApp hatırlatma",
-    icon: "medical_services",
-    packs: ["base", "sales", "communication"],
-  },
-  {
-    id: "wholesale",
-    name: "Toptan Satış",
-    description: "B2B satış, cari hesap, çek/senet, stok",
-    icon: "warehouse",
-    packs: ["base", "sales", "finance", "inventory"],
-  },
-  {
     id: "custom",
-    name: "Özel Kurulum",
-    description: "İstediğin modülleri tek tek seç",
+    name: "Custom Setup",
+    description: "Pick exactly the modules you need",
     icon: "tune",
     packs: ["base"],
   },

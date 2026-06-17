@@ -1,7 +1,5 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getCurrentTenant } from "@/lib/tenant";
-import ModuleGuard from "@/components/module-guard";
+import { createClient } from "@/lib/supabase/server";
 import { addTryOn } from "./actions";
 
 const REACTIONS = [
@@ -12,28 +10,34 @@ const REACTIONS = [
 ];
 
 export default async function TryOnsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
   const tenant = await getCurrentTenant();
-  if (!tenant) redirect("/onboarding");
 
-  return (
-    <ModuleGuard moduleId="inventory" enabledModules={tenant.enabled_modules}>
-      <TryOnsContent tenantId={tenant.id} />
-    </ModuleGuard>
-  );
+  return <TryOnsContent tenantId={tenant?.id ?? "demo"} />;
 }
 
-async function TryOnsContent({ tenantId }: { tenantId: string }) {
-  const supabase = await createClient();
+type OptionRow = { id: string; name: string; barcode?: string | null; category?: string | null };
+type TryOnRow = {
+  id: string;
+  reaction?: string | null;
+  rating?: number | null;
+  stylist?: string | null;
+  notes?: string | null;
+  created_at: string;
+  customers?: { name: string } | { name: string }[] | null;
+  products?: { name: string; category: string | null } | { name: string; category: string | null }[] | null;
+};
 
-  const [{ data: tryOns }, { data: customers }, { data: products }] = await Promise.all([
-    supabase.from("try_ons").select("*, customers(name), products(name, category, barcode)").eq("tenant_id", tenantId).order("created_at", { ascending: false }).limit(50),
-    supabase.from("customers").select("id, name").eq("tenant_id", tenantId).order("name"),
-    supabase.from("products").select("id, name, barcode, category").eq("tenant_id", tenantId).order("name"),
-  ]);
+async function TryOnsContent({ tenantId }: { tenantId: string }) {
+  let tryOns: TryOnRow[] = [], customers: OptionRow[] = [], products: OptionRow[] = [];
+  try {
+    const supabase = await createClient();
+    const [r1, r2, r3] = await Promise.all([
+      supabase.from("try_ons").select("*, customers(name), products(name, category, barcode)").eq("tenant_id", tenantId).order("created_at", { ascending: false }).limit(50),
+      supabase.from("customers").select("id, name").eq("tenant_id", tenantId).order("name"),
+      supabase.from("products").select("id, name, barcode, category").eq("tenant_id", tenantId).order("name"),
+    ]);
+    tryOns = r1.data ?? []; customers = r2.data ?? []; products = r3.data ?? [];
+  } catch {}
 
   const list = tryOns ?? [];
   const REACTION_EMOJI: Record<string, string> = { loved: "😍", liked: "👍", maybe: "🤔", no: "👎" };

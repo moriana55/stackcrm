@@ -22,15 +22,26 @@ export async function POST(req: NextRequest) {
     const packs = JSON.parse(session.metadata?.packs || '["base"]') as PackId[];
 
     if (tenantId) {
+      const paidPacks = packs.filter((p) => p !== "base");
       await supabase.from("tenants").update({
         packs,
         plan: packs.length > 1 ? "starter" : "free",
+        // Trial → paid funnel: dönüşüm zamanını cohort analitiği için işaretle
+        converted_at: paidPacks.length > 0 ? new Date().toISOString() : null,
         settings: {
           stripe_customer_id: session.customer,
           stripe_subscription_id: session.subscription,
         },
         updated_at: new Date().toISOString(),
       }).eq("id", tenantId);
+
+      if (paidPacks.length > 0) {
+        await supabase.from("funnel_events").insert({
+          tenant_id: tenantId,
+          event: "trial_converted",
+          metadata: { packs: paidPacks },
+        });
+      }
     }
   }
 

@@ -8,7 +8,9 @@ export type ModuleId =
   | "whatsapp"
   | "reports"
   | "commissions"
-  | "efatura";
+  | "efatura"
+  | "booking"
+  | "services";
 
 export type ModuleDefinition = {
   id: ModuleId;
@@ -21,7 +23,7 @@ export type ModuleDefinition = {
   dependencies?: ModuleId[];
 };
 
-export type PackId = "base" | "sales" | "finance" | "inventory" | "communication" | "pro";
+export type PackId = "base" | "sales" | "finance" | "inventory" | "communication" | "pro" | "salon";
 
 export type PackDefinition = {
   id: PackId;
@@ -163,6 +165,29 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
     ],
     dependencies: ["invoices"],
   },
+  booking: {
+    id: "booking",
+    name: "Online Booking",
+    description: "Public booking page, availability, confirmations",
+    icon: "calendar_month",
+    pack: "base",
+    routes: ["/bookings", "/schedule"],
+    navItems: [
+      { href: "/bookings", label: "Bookings", icon: "calendar_month" },
+      { href: "/schedule", label: "Schedule", icon: "date_range" },
+    ],
+  },
+  services: {
+    id: "services",
+    name: "Services & Staff",
+    description: "Service menu, pricing, staff management",
+    icon: "content_cut",
+    pack: "base",
+    routes: ["/services"],
+    navItems: [
+      { href: "/services", label: "Services", icon: "content_cut" },
+    ],
+  },
 };
 
 export const PACKS: Record<PackId, PackDefinition> = {
@@ -214,6 +239,14 @@ export const PACKS: Record<PackId, PackDefinition> = {
     monthlyPrice: 600,
     color: "#d97706",
   },
+  salon: {
+    id: "salon",
+    name: "Salon & Booking",
+    description: "Online booking, services, staff scheduling",
+    modules: ["booking", "services"],
+    monthlyPrice: 0,
+    color: "#e11d48",
+  },
 };
 
 export const ALL_MODULE_IDS = Object.keys(MODULES) as ModuleId[];
@@ -241,10 +274,11 @@ export function calculateMonthlyPrice(packIds: PackId[]): number {
 
 export function getNavForModules(enabledModules: ModuleId[]) {
   const groups: { section?: string; items: { href: string; label: string; icon: string }[] }[] = [
-    { items: [{ href: "/dashboard", label: "Ana Sayfa", icon: "dashboard" }] },
+    { items: [{ href: "/dashboard", label: "Dashboard", icon: "dashboard" }] },
   ];
 
   const sectionMap: Record<string, { section: string; moduleIds: ModuleId[] }> = {
+    salon: { section: "Booking", moduleIds: ["booking", "services"] },
     base: { section: "Clients", moduleIds: ["crm", "appointments"] },
     sales: { section: "Sales", moduleIds: ["sales", "invoices", "reports"] },
     finance: { section: "Finance", moduleIds: ["finance"] },

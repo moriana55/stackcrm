@@ -3,11 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentTenant, getCurrentMember } from "@/lib/tenant";
+import { hasPermission } from "@/lib/rbac";
 
 export async function updateCustomer(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const tenant = await getCurrentTenant();
+  if (!tenant) redirect("/onboarding");
+  const member = await getCurrentMember();
+  if (!hasPermission(member?.role, "customers.manage")) redirect("/customers?error=forbidden");
 
   const id = String(formData.get("id") || "").trim();
   const name = String(formData.get("name") || "").trim();
@@ -18,7 +24,8 @@ export async function updateCustomer(formData: FormData) {
 
   if (!id || !name) redirect(`/customers/${id}?error=required`);
 
-  await supabase.from("customers").update({ name, phone, email, status, notes, updated_at: new Date().toISOString() }).eq("id", id);
+  // Tenant kapsamı (defense-in-depth, RLS'e ek)
+  await supabase.from("customers").update({ name, phone, email, status, notes, updated_at: new Date().toISOString() }).eq("id", id).eq("tenant_id", tenant.id);
 
   revalidatePath(`/customers/${id}`);
   revalidatePath("/customers");

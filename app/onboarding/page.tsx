@@ -1,27 +1,77 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { PRESETS } from "@/config/presets";
 import { PACKS, ALL_PACK_IDS, calculateMonthlyPrice, type PackId } from "@/config/modules";
+import { loadDraft, saveDraft, finishOnboarding, type OnboardingDraft } from "./actions";
+
+type ServiceRow = { name: string; duration?: number; price?: number };
+type StaffRow = { email: string; role: string };
+
+const STEPS = ["İşletme", "Hizmetler", "Ekip", "Hazır"];
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [shopName, setShopName] = useState("");
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [selectedPacks, setSelectedPacks] = useState<PackId[]>(["base"]);
+  const [services, setServices] = useState<ServiceRow[]>([{ name: "" }]);
+  const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const supabase = createClient();
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Taslağı yükle
+  useEffect(() => {
+    (async () => {
+      const draft = await loadDraft();
+      if (draft) {
+        if (draft.shopName) setShopName(draft.shopName);
+        if (draft.packs?.length) setSelectedPacks(draft.packs);
+        if (draft.services?.length) setServices(draft.services);
+        if (draft.staff?.length) setStaff(draft.staff);
+        if (draft.step) setStep(Math.min(3, draft.step));
+      }
+      setHydrated(true);
+    })();
+  }, []);
+
+  const persist = useCallback(
+    (next?: Partial<OnboardingDraft>) => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(async () => {
+        setSaving(true);
+        await saveDraft({
+          shopName,
+          packs: selectedPacks,
+          services,
+          staff,
+          step,
+          ...next,
+        });
+        setSaving(false);
+      }, 600);
+    },
+    [shopName, selectedPacks, services, staff, step]
+  );
+
+  // Değişiklikleri otomatik kaydet (taslak)
+  useEffect(() => {
+    if (!hydrated) return;
+    persist();
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [hydrated, shopName, selectedPacks, services, staff, step, persist]);
 
   function selectPreset(presetId: string) {
     setSelectedPreset(presetId);
     const preset = PRESETS.find((p) => p.id === presetId);
-    if (preset && presetId !== "custom") {
-      setSelectedPacks(preset.packs);
-    }
+    if (preset && presetId !== "custom") setSelectedPacks(preset.packs);
   }
 
   function togglePack(packId: PackId) {
@@ -32,40 +82,40 @@ export default function OnboardingPage() {
     setSelectedPreset("custom");
   }
 
-  async function handleCreate() {
-    if (!shopName.trim()) { setError("Please enter your shop name"); return; }
+  function updateService(i: number, patch: Partial<ServiceRow>) {
+    setServices((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  }
+  function addServiceRow() {
+    setServices((prev) => [...prev, { name: "" }]);
+  }
+  function removeServiceRow(i: number) {
+    setServices((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  async function handleFinish() {
+    if (!shopName.trim()) {
+      setError("Lütfen işletme adını girin");
+      setStep(1);
+      return;
+    }
     setLoading(true);
     setError("");
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const slug = shopName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-
-      const { data: tenant, error: err } = await supabase.from("tenants").insert({
-        name: shopName.trim(),
-        slug: slug || `shop-${Date.now()}`,
-        owner_id: user.id,
-        packs: selectedPacks,
-        plan: selectedPacks.length <= 1 ? "free" : "starter",
-      }).select().single();
-
-      if (err) throw err;
-
-      await supabase.from("tenant_members").insert({
-        tenant_id: tenant.id,
-        user_id: user.id,
-        role: "owner",
-      });
-
-      router.push("/dashboard");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
+    const cleanServices = services.filter((s) => s.name.trim());
+    const res = await finishOnboarding({
+      shopName: shopName.trim(),
+      packs: selectedPacks,
+      services: cleanServices,
+      signupSource: typeof document !== "undefined" ? document.referrer || "direct" : "direct",
+    });
+    if (!res.ok) {
+      setError(res.error || "Bir hata oluştu");
       setLoading(false);
+      return;
     }
+    router.push("/dashboard");
   }
+
+  const monthly = calculateMonthlyPrice(selectedPacks);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
@@ -74,70 +124,171 @@ export default function OnboardingPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             Bridal<span className="text-rose-500">Stack</span>
           </h1>
-          <p className="text-gray-500 mt-2">Let&apos;s set up your shop</p>
-          <div className="flex items-center justify-center gap-2 mt-4">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className={`h-1.5 rounded-full transition-all ${s === step ? "w-8 bg-gray-900" : s < step ? "w-8 bg-gray-400" : "w-8 bg-gray-200"}`} />
-            ))}
+          <p className="text-gray-500 mt-2">Mağazanızı kuralım</p>
+          <div className="flex items-center justify-center gap-2 mt-5">
+            {STEPS.map((label, idx) => {
+              const s = idx + 1;
+              return (
+                <div key={label} className="flex items-center gap-2">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                        s === step
+                          ? "bg-gray-900 text-white"
+                          : s < step
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {s < step ? "✓" : s}
+                    </div>
+                    <span className="text-[10px] text-gray-500 mt-1">{label}</span>
+                  </div>
+                  {idx < STEPS.length - 1 && (
+                    <div className={`h-0.5 w-8 ${s < step ? "bg-green-400" : "bg-gray-200"}`} />
+                  )}
+                </div>
+              );
+            })}
           </div>
+          {hydrated && (
+            <p className="text-[11px] text-gray-400 mt-3">
+              {saving ? "Taslak kaydediliyor…" : "İlerlemeniz otomatik kaydediliyor"}
+            </p>
+          )}
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-200">{error}</div>
+          <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-200">
+            {error}
+          </div>
         )}
 
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
+          {/* ADIM 1 — İşletme adı + paketler/şablon */}
           {step === 1 && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">What&apos;s your shop called?</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">İşletmenizin adı nedir?</h2>
               <input
                 type="text"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
+                maxLength={120}
                 className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none text-lg"
-                placeholder="e.g. Grace Bridal Boutique"
+                placeholder="örn. Grace Bridal Boutique"
                 autoFocus
               />
-              <button
-                onClick={() => shopName.trim() ? setStep(2) : setError("Please enter a name")}
-                className="mt-6 w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
-              >
-                Continue
-              </button>
-            </div>
-          )}
 
-          {step === 2 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Choose a template</h2>
-              <p className="text-sm text-gray-500 mb-6">Pick the closest match — you can customize later.</p>
+              <h3 className="text-sm font-semibold text-gray-900 mt-6 mb-3">Sektör şablonu</h3>
               <div className="grid grid-cols-2 gap-3">
                 {PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => selectPreset(preset.id)}
-                    className={`text-left p-4 rounded-xl border-2 transition-all ${
-                      selectedPreset === preset.id ? "border-gray-900 bg-gray-50" : "border-gray-100 hover:border-gray-300"
+                    className={`text-left p-3 rounded-xl border-2 transition-all ${
+                      selectedPreset === preset.id
+                        ? "border-gray-900 bg-gray-50"
+                        : "border-gray-100 hover:border-gray-300"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-2xl text-gray-600 mb-2 block">{preset.icon}</span>
+                    <span className="material-symbols-outlined text-xl text-gray-600 mb-1 block">
+                      {preset.icon}
+                    </span>
                     <div className="font-medium text-gray-900 text-sm">{preset.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{preset.description}</div>
                   </button>
                 ))}
               </div>
+
+              <div className="mt-5 text-sm text-gray-500">
+                Aylık toplam: <strong className="text-gray-900">${monthly}/ay</strong>
+              </div>
+
+              <button
+                onClick={() =>
+                  shopName.trim() ? setStep(2) : setError("Lütfen bir ad girin")
+                }
+                className="mt-6 w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+              >
+                Devam
+              </button>
+            </div>
+          )}
+
+          {/* ADIM 2 — Hizmetler */}
+          {step === 2 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Hizmetlerinizi ekleyin</h2>
+              <p className="text-sm text-gray-500 mb-6">
+                İsteğe bağlı — daha sonra da ekleyebilirsiniz.
+              </p>
+              <div className="flex flex-col gap-3">
+                {services.map((s, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      value={s.name}
+                      onChange={(e) => updateService(i, { name: e.target.value })}
+                      placeholder="Hizmet adı (örn. Prova)"
+                      maxLength={120}
+                      className="flex-1 px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                    <input
+                      type="number"
+                      min={5}
+                      value={s.duration ?? ""}
+                      onChange={(e) => updateService(i, { duration: Number(e.target.value) })}
+                      placeholder="dk"
+                      className="w-20 px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      value={s.price ?? ""}
+                      onChange={(e) => updateService(i, { price: Number(e.target.value) })}
+                      placeholder="₺"
+                      className="w-24 px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none"
+                    />
+                    {services.length > 1 && (
+                      <button
+                        onClick={() => removeServiceRow(i)}
+                        className="text-gray-400 hover:text-red-500"
+                        aria-label="Kaldır"
+                      >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={addServiceRow}
+                className="mt-3 text-sm text-rose-600 hover:text-rose-700 font-medium"
+              >
+                + Hizmet ekle
+              </button>
+
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setStep(1)} className="flex-1 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors">Back</button>
-                <button onClick={() => selectedPreset ? setStep(3) : setError("Pick a template")} className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors">Continue</button>
+                <button
+                  onClick={() => setStep(1)}
+                  className="flex-1 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Geri
+                </button>
+                <button
+                  onClick={() => setStep(3)}
+                  className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800"
+                >
+                  Devam
+                </button>
               </div>
             </div>
           )}
 
+          {/* ADIM 3 — Ekip (modül seçimi + bilgilendirme) */}
           {step === 3 && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Customize your modules</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Modüllerinizi seçin</h2>
               <p className="text-sm text-gray-500 mb-6">
-                Toggle the packs you need. Total: <strong>${calculateMonthlyPrice(selectedPacks)}/mo</strong>
+                İhtiyacınız olan paketleri açın. Aylık toplam: <strong>${monthly}/ay</strong>
               </p>
               <div className="grid gap-3">
                 {ALL_PACK_IDS.map((packId) => {
@@ -158,22 +309,79 @@ export default function OnboardingPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-semibold text-gray-900">
-                          {pack.monthlyPrice === 0 ? "Free" : `$${pack.monthlyPrice}/mo`}
+                          {pack.monthlyPrice === 0 ? "Ücretsiz" : `$${pack.monthlyPrice}/ay`}
                         </div>
-                        {active && <span className="text-xs text-green-600">✓ Active</span>}
+                        {active && <span className="text-xs text-green-600">✓ Aktif</span>}
                       </div>
                     </button>
                   );
                 })}
               </div>
+              <div className="mt-4 p-3 rounded-xl bg-blue-50 border border-blue-200">
+                <p className="text-xs text-blue-700">
+                  Ekip üyelerini kurulum sonrası <strong>Ekip &amp; Roller</strong> sayfasından
+                  davet edebilirsiniz.
+                </p>
+              </div>
+
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setStep(2)} className="flex-1 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors">Back</button>
                 <button
-                  onClick={handleCreate}
-                  disabled={loading}
-                  className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+                  onClick={() => setStep(2)}
+                  className="flex-1 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  {loading ? "Creating..." : "Launch My Shop"}
+                  Geri
+                </button>
+                <button
+                  onClick={() => setStep(4)}
+                  className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800"
+                >
+                  Devam
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ADIM 4 — Özet / tamamla */}
+          {step === 4 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Her şey hazır 🎉</h2>
+              <p className="text-sm text-gray-500 mb-6">Kurulumu gözden geçirip başlayın.</p>
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">İşletme</dt>
+                  <dd className="font-medium text-gray-900">{shopName || "—"}</dd>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">Paketler</dt>
+                  <dd className="font-medium text-gray-900">
+                    {selectedPacks.map((p) => PACKS[p]?.name).join(", ")}
+                  </dd>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">Hizmet sayısı</dt>
+                  <dd className="font-medium text-gray-900">
+                    {services.filter((s) => s.name.trim()).length}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Aylık ücret</dt>
+                  <dd className="font-medium text-gray-900">${monthly}/ay</dd>
+                </div>
+              </dl>
+
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => setStep(3)}
+                  className="flex-1 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Geri
+                </button>
+                <button
+                  onClick={handleFinish}
+                  disabled={loading}
+                  className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {loading ? "Oluşturuluyor…" : "Mağazamı Başlat"}
                 </button>
               </div>
             </div>
