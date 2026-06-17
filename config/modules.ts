@@ -274,7 +274,10 @@ export function calculateMonthlyPrice(packIds: PackId[]): number {
 
 export function getNavForModules(enabledModules: ModuleId[]) {
   const groups: { section?: string; items: { href: string; label: string; icon: string }[] }[] = [
-    { items: [{ href: "/dashboard", label: "Dashboard", icon: "dashboard" }] },
+    { items: [
+      { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
+      { href: "/analytics", label: "Analitik", icon: "insights" },
+    ] },
   ];
 
   const sectionMap: Record<string, { section: string; moduleIds: ModuleId[] }> = {
@@ -302,7 +305,7 @@ export function getNavForModules(enabledModules: ModuleId[]) {
 }
 
 export function isRouteAllowed(path: string, enabledModules: ModuleId[]): boolean {
-  if (path === "/dashboard" || path === "/settings" || path === "/login") return true;
+  if (path === "/dashboard" || path === "/settings" || path === "/login" || path.startsWith("/analytics")) return true;
 
   for (const moduleId of enabledModules) {
     const mod = MODULES[moduleId];

@@ -48,7 +48,7 @@ export default async function PublicBookingPage({ params }: Props) {
           <img src={tenant.logo_url as string} alt={tenant.name} className="h-12 mx-auto mb-3 object-contain" />
         )}
         <h1 className="text-2xl font-bold text-gray-900">{tenant.name}</h1>
-        <p className="text-gray-500 mt-1">Book an appointment online</p>
+        <p className="text-gray-500 mt-1">Online randevu oluşturun</p>
       </header>
 
       <div className="max-w-xl mx-auto px-4 py-8">

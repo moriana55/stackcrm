@@ -56,6 +56,43 @@ export function paymentReminderEmail(customerName: string, shopName: string, amo
   };
 }
 
+// Taksit hatırlatma e-postası (Türkçe) — kind'a göre ton değişir.
+export function installmentReminderEmail(
+  customerName: string,
+  shopName: string,
+  amount: string,
+  dueDate: string,
+  kind: "upcoming" | "due_today" | "overdue"
+) {
+  const heading =
+    kind === "overdue"
+      ? "Gecikmiş taksit ödemeniz var"
+      : kind === "due_today"
+      ? "Bugün taksit ödeme gününüz"
+      : "Yaklaşan taksit ödemeniz";
+  const accent = kind === "overdue" ? "#b91c1c" : kind === "due_today" ? "#d97706" : "#111";
+  const bg = kind === "overdue" ? "#fef2f2" : kind === "due_today" ? "#fffbeb" : "#f9fafb";
+  return {
+    subject: `${heading} — ${shopName}`,
+    html: `
+      <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+        <h2 style="color: #111; margin-bottom: 8px;">Merhaba ${customerName},</h2>
+        <p style="color: #555; line-height: 1.6;">
+          <strong>${shopName}</strong> nezdindeki taksit ödemenizle ilgili bir hatırlatma.
+        </p>
+        <div style="background: ${bg}; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0; color: #111; font-size: 24px; font-weight: 700;">${amount}</p>
+          <p style="margin: 4px 0 0; color: ${accent};">Vade: ${dueDate}</p>
+        </div>
+        <p style="color: #555; line-height: 1.6;">
+          Sorularınız için bizimle iletişime geçebilirsiniz.
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 32px;">StackCRM ile gönderildi</p>
+      </div>
+    `,
+  };
+}
+
 export function welcomeEmail(customerName: string, shopName: string) {
   return {
     subject: `Welcome to ${shopName}!`,
