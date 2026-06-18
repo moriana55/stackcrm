@@ -1,0 +1,82 @@
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  Genel rezervasyon (public booking) doğrulama + çakışma — SAF KOD          ║
+// ║  DB / ağ yok. Route handler (app/api/book/route.ts) bu yardımcıları        ║
+// ║  kullanır; böylece mantık birim testlerle doğrulanabilir.                  ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
+
+export const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export type BookingInput = {
+  tenant_id: string;
+  service_id: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string; // lowercase'lenmiş; boş olabilir
+  booking_date: string; // YYYY-MM-DD
+  start_time: string; // HH:MM
+  end_time: string; // HH:MM
+};
+
+export type ValidationResult = { ok: true } | { ok: false; error: string };
+
+// Genel rezervasyon girdisini doğrular (fail-closed). `today` enjekte edilebilir
+// (test edilebilirlik için); varsayılan bugünün UTC tarihidir.
+export function validateBookingInput(
+  input: BookingInput,
+  today: string = new Date().toISOString().slice(0, 10)
+): ValidationResult {
+  const { tenant_id, service_id, customer_name, customer_phone, customer_email, booking_date, start_time, end_time } = input;
+
+  if (
+    !UUID_RE.test(tenant_id) ||
+    !UUID_RE.test(service_id) ||
+    !customer_name ||
+    !DATE_RE.test(booking_date) ||
+    !TIME_RE.test(start_time) ||
+    !TIME_RE.test(end_time) ||
+    start_time >= end_time
+  ) {
+    return { ok: false, error: "Eksik veya geçersiz alanlar." };
+  }
+  if (customer_email && !EMAIL_RE.test(customer_email)) {
+    return { ok: false, error: "Geçersiz e-posta." };
+  }
+  if (!customer_phone && !customer_email) {
+    return { ok: false, error: "Telefon veya e-posta gereklidir." };
+  }
+  if (booking_date < today) {
+    return { ok: false, error: "Geçmiş bir tarih seçilemez." };
+  }
+  return { ok: true };
+}
+
+// İki zaman aralığının (HH:MM string'leri, aynı gün) örtüşüp örtüşmediği.
+// Yarı-açık aralık [start, end): bitiş == başlangıç çakışma SAYILMAZ.
+// DB sorgusundaki `start < end' && end > start'` koşuluyla aynı semantik.
+export function intervalsOverlap(
+  aStart: string,
+  aEnd: string,
+  bStart: string,
+  bEnd: string
+): boolean {
+  return aStart < bEnd && aEnd > bStart;
+}
+
+// Yeni bir rezervasyonun, mevcut (iptal/no-show olmayan) rezervasyonlardan
+// herhangi biriyle çakışıp çakışmadığı. SAF: çağıran taraf kayıtları DB'den
+// getirip (aynı personel + tarih) buraya verir.
+export type ExistingBooking = { start_time: string; end_time: string; status: string };
+const BLOCKING_EXEMPT = new Set(["cancelled", "no_show"]);
+
+export function hasConflict(
+  start_time: string,
+  end_time: string,
+  existing: ExistingBooking[]
+): boolean {
+  return existing.some(
+    (b) => !BLOCKING_EXEMPT.has(b.status) && intervalsOverlap(start_time, end_time, b.start_time, b.end_time)
+  );
+}

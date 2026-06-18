@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { UUID_RE, validateBookingInput } from "@/lib/booking-validation";
 
 export const dynamic = "force-dynamic";
-
-// ── Doğrulama yardımcıları (fail-closed) ───────────────────────────────────
-const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").trim().slice(0, max);
@@ -44,28 +39,19 @@ export async function POST(req: Request) {
     const end_time = clean(body.end_time, 5);
     const notes = clean(body.notes, 500) || null;
 
-    // 2. Şema doğrulaması (fail-closed)
-    if (
-      !UUID_RE.test(tenant_id) ||
-      !UUID_RE.test(service_id) ||
-      !customer_name ||
-      !DATE_RE.test(booking_date) ||
-      !TIME_RE.test(start_time) ||
-      !TIME_RE.test(end_time) ||
-      start_time >= end_time
-    ) {
-      return NextResponse.json({ error: "Eksik veya geçersiz alanlar." }, { status: 400 });
-    }
-    if (customer_email && !EMAIL_RE.test(customer_email)) {
-      return NextResponse.json({ error: "Geçersiz e-posta." }, { status: 400 });
-    }
-    if (!customer_phone && !customer_email) {
-      return NextResponse.json({ error: "Telefon veya e-posta gereklidir." }, { status: 400 });
-    }
-    // Geçmiş tarihe rezervasyon engeli
-    const today = new Date().toISOString().slice(0, 10);
-    if (booking_date < today) {
-      return NextResponse.json({ error: "Geçmiş bir tarih seçilemez." }, { status: 400 });
+    // 2. Şema doğrulaması (fail-closed) — saf çekirdek lib/booking-validation.ts
+    const valid = validateBookingInput({
+      tenant_id,
+      service_id,
+      customer_name,
+      customer_phone,
+      customer_email,
+      booking_date,
+      start_time,
+      end_time,
+    });
+    if (!valid.ok) {
+      return NextResponse.json({ error: valid.error }, { status: 400 });
     }
 
     const member_id = member_id_raw && UUID_RE.test(member_id_raw) ? member_id_raw : null;
