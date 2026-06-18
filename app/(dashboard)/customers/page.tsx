@@ -41,49 +41,49 @@ async function CustomersContent({ tenantId, query }: { tenantId: string; query: 
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <p className="text-sm text-gray-500 mt-1">{count ?? 0} total</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Müşteriler</h1>
+          <p className="text-sm text-gray-500 mt-1">Toplam {count ?? 0}</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/customers/import" className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+          <Link href="/customers/import" className="bs-btn-ghost">
             <span className="material-symbols-outlined text-lg">upload_file</span>
             İçe Aktar
           </Link>
-          <Link href="/customers/new" className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
+          <Link href="/customers/new" className="bs-btn-dark">
             <span className="material-symbols-outlined text-lg">add</span>
-            New Customer
+            Yeni Müşteri
           </Link>
         </div>
       </div>
 
       <div className="mb-4">
-        <SearchBar placeholder="Search by name, phone, email..." basePath="/customers" />
+        <SearchBar placeholder="İsim, telefon veya e-posta ara..." basePath="/customers" />
       </div>
 
       {list.length > 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
+        <div className="bs-card overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Added</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Portal</th>
+                <th className="bs-th">Ad</th>
+                <th className="bs-th">Telefon</th>
+                <th className="bs-th">E-posta</th>
+                <th className="bs-th">Durum</th>
+                <th className="bs-th">Eklendi</th>
+                <th className="bs-th">Portal</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {list.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4"><Link href={`/customers/${c.id}`} className="font-medium text-gray-900 hover:text-rose-600">{c.name}</Link></td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{c.phone ?? "—"}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{c.email ?? "—"}</td>
+                <tr key={c.id} className="hover:bg-gray-50/70 transition-colors">
+                  <td className="px-6 py-4"><Link href={`/customers/${c.id}`} className="font-medium text-gray-900 hover:text-[var(--accent)] transition-colors">{c.name}</Link></td>
+                  <td className="bs-td">{c.phone ?? "—"}</td>
+                  <td className="bs-td">{c.email ?? "—"}</td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{c.status ?? "new"}</span>
+                    <span className="bs-badge bg-gray-100 text-gray-700">{c.status ?? "new"}</span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-400">
-                    {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {new Date(c.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
                   </td>
                   <td className="px-6 py-4">
                     <PortalLinkButton customerId={c.id} />
@@ -94,14 +94,14 @@ async function CustomersContent({ tenantId, query }: { tenantId: string; query: 
           </table>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center">
-          <span className="material-symbols-outlined text-4xl text-gray-300 mb-4 block">groups</span>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">{query ? "No results found" : "No customers yet"}</h3>
-          <p className="text-sm text-gray-500 mb-4">{query ? "Try a different search term." : "Add your first customer to get started."}</p>
+        <div className="bs-card p-16 text-center">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mx-auto mb-4 material-symbols-outlined text-3xl">groups</span>
+          <h3 className="text-base font-semibold text-gray-900 mb-1">{query ? "Sonuç bulunamadı" : "Henüz müşteri yok"}</h3>
+          <p className="text-sm text-gray-500 mb-5">{query ? "Farklı bir arama terimi deneyin." : "Başlamak için ilk müşterinizi ekleyin."}</p>
           {!query && (
-            <Link href="/customers/new" className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
+            <Link href="/customers/new" className="bs-btn-dark">
               <span className="material-symbols-outlined text-lg">add</span>
-              Add Customer
+              Müşteri Ekle
             </Link>
           )}
         </div>

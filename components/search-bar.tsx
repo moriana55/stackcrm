@@ -41,13 +41,13 @@ export default function SearchBar({ placeholder = "Search...", basePath }: { pla
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+            className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-gray-200 bg-white text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)]"
           />
           <button
             type="button"
             onClick={() => setShowScanner(true)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-rose-500 transition-colors flex items-center justify-center"
-            title="Scan barcode with camera"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--accent)] transition-colors flex items-center justify-center"
+            title="Kamera ile barkod tara"
           >
             <span className="material-symbols-outlined text-lg">barcode_scanner</span>
           </button>
@@ -58,7 +58,7 @@ export default function SearchBar({ placeholder = "Search...", basePath }: { pla
             onClick={() => { setQuery(""); router.push(basePath); }}
             className="px-3 py-2 text-sm text-gray-500 hover:text-gray-900 shrink-0"
           >
-            Clear
+            Temizle
           </button>
         )}
       </form>

@@ -19,11 +19,11 @@ export default function UpgradeCta({ daysLeft, expired }: Props) {
       className={`mb-6 rounded-2xl border p-4 flex items-center justify-between gap-4 ${
         expired
           ? "bg-red-50 border-red-200"
-          : "bg-gradient-to-r from-rose-50 to-amber-50 border-rose-200"
+          : "bg-[var(--accent-soft)] border-[var(--accent-ring)]"
       }`}
     >
       <div className="flex items-center gap-3">
-        <span className="material-symbols-outlined text-rose-500">
+        <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 material-symbols-outlined ${expired ? "bg-red-100 text-red-600" : "bg-white text-[var(--accent)]"}`}>
           {expired ? "lock_clock" : "rocket_launch"}
         </span>
         <div>

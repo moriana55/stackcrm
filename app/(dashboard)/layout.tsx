@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen">
       <Sidebar groups={navGroups} tenantName={tenant.name} />
       <main className="lg:ml-64 min-h-screen pt-14 lg:pt-0">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8 bs-animate-in">
           {showCta && trial && (
             <UpgradeCta daysLeft={trial.daysLeft} expired={trial.expired} />
           )}

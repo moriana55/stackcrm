@@ -39,19 +39,29 @@ export default async function PublicBookingPage({ params }: Props) {
     .select("member_id, day_of_week, start_time, end_time, break_start, break_end, is_off")
     .in("member_id", (members ?? []).map((m) => m.id));
 
-  const accent = (tenant.accent_color as string) ?? "#e11d48";
+  const accent = (tenant.accent_color as string) ?? "#b4496a";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <header className="bg-white border-b border-gray-100 px-6 py-6 text-center">
-        {tenant.logo_url && (
-          <img src={tenant.logo_url as string} alt={tenant.name} className="h-12 mx-auto mb-3 object-contain" />
-        )}
-        <h1 className="text-2xl font-bold text-gray-900">{tenant.name}</h1>
-        <p className="text-gray-500 mt-1">Online randevu oluşturun</p>
-      </header>
+    <div className="min-h-screen bg-[#fafafa] flex flex-col">
+      {/* Soft brand-tinted top band */}
+      <div className="h-32 w-full" style={{ background: `linear-gradient(180deg, ${accent}14 0%, ${accent}05 60%, transparent 100%)` }} />
 
-      <div className="max-w-xl mx-auto px-4 py-8">
+      <div className="max-w-xl w-full mx-auto px-4 -mt-20 flex-1">
+        <header className="text-center mb-7">
+          {tenant.logo_url ? (
+            <img src={tenant.logo_url as string} alt={tenant.name} className="h-16 mx-auto mb-4 object-contain" />
+          ) : (
+            <div
+              className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-white text-2xl font-semibold shadow-sm"
+              style={{ backgroundColor: accent }}
+            >
+              {tenant.name.trim().charAt(0).toUpperCase()}
+            </div>
+          )}
+          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">{tenant.name}</h1>
+          <p className="text-gray-500 mt-1.5 text-sm">Birkaç adımda online randevunuzu oluşturun</p>
+        </header>
+
         <BookingForm
           tenantId={tenant.id}
           accent={accent}
@@ -75,8 +85,11 @@ export default async function PublicBookingPage({ params }: Props) {
         />
       </div>
 
-      <footer className="text-center py-6">
-        <p className="text-xs text-gray-400">Powered by StackCRM</p>
+      <footer className="text-center py-8 mt-6">
+        <p className="text-xs text-gray-400 inline-flex items-center gap-1">
+          <span className="material-symbols-outlined text-[13px]">bolt</span>
+          BridalStack ile güçlendirildi
+        </p>
       </footer>
     </div>
   );

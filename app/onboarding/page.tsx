@@ -121,8 +121,8 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Bridal<span className="text-rose-500">Stack</span>
+          <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">
+            Bridal<span className="text-[var(--accent)]">Stack</span>
           </h1>
           <p className="text-gray-500 mt-2">Mağazanızı kuralım</p>
           <div className="flex items-center justify-center gap-2 mt-5">
@@ -174,7 +174,7 @@ export default function OnboardingPage() {
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
                 maxLength={120}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none text-lg"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[var(--accent-ring)] focus:border-[var(--accent)] outline-none text-lg"
                 placeholder="örn. Grace Bridal Boutique"
                 autoFocus
               />
@@ -229,7 +229,7 @@ export default function OnboardingPage() {
                       onChange={(e) => updateService(i, { name: e.target.value })}
                       placeholder="Hizmet adı (örn. Prova)"
                       maxLength={120}
-                      className="flex-1 px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-rose-500"
+                      className="flex-1 px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-ring)] focus:border-[var(--accent)]"
                     />
                     <input
                       type="number"
@@ -261,7 +261,7 @@ export default function OnboardingPage() {
               </div>
               <button
                 onClick={addServiceRow}
-                className="mt-3 text-sm text-rose-600 hover:text-rose-700 font-medium"
+                className="mt-3 text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium"
               >
                 + Hizmet ekle
               </button>

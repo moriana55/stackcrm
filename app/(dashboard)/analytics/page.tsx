@@ -162,52 +162,52 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">Analitik</h1>
+          <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 tracking-tight">Analitik</h1>
           <p className="text-gray-500 mt-1">{tenant.name} — performans özeti</p>
         </div>
         <RangeFilter current={String(rangeDays)} />
       </div>
 
       {noModules ? (
-        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-          <span className="material-symbols-outlined text-4xl text-gray-300 mb-3 block">insights</span>
-          <p className="text-gray-500">Analitik için etkin bir modül bulunamadı. Satış, randevu, rezervasyon veya envanter modülünü etkinleştirin.</p>
+        <div className="bs-card p-12 text-center">
+          <span className="flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mx-auto mb-3 material-symbols-outlined text-3xl">insights</span>
+          <p className="text-gray-500 max-w-md mx-auto">Analitik için etkin bir modül bulunamadı. Satış, randevu, rezervasyon veya envanter modülünü etkinleştirin.</p>
         </div>
       ) : (
         <>
           {kpis.length > 0 && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {kpis.map((k) => (
-                <div key={k.label} className="bg-white p-5 rounded-2xl border border-gray-200">
-                  <div className="text-xs font-semibold text-gray-400 uppercase">{k.label}</div>
-                  <div className="text-2xl font-bold text-gray-900 mt-1">{k.value}</div>
+                <div key={k.label} className="bs-card p-5">
+                  <div className="bs-eyebrow">{k.label}</div>
+                  <div className="text-2xl font-semibold text-gray-900 mt-1.5 tabular-nums">{k.value}</div>
                   <div className="text-xs text-gray-400 mt-0.5">{k.sub}</div>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {hasSales && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bs-card p-6">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4">Gelir</h3>
                 <RevenueBars data={revenueSeries} />
               </div>
             )}
             {hasAppointments && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bs-card p-6">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4">Randevu Doluluk (gün)</h3>
                 <FillLine data={fillSeries} />
               </div>
             )}
             {hasBooking && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bs-card p-6">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4">Personel Performansı</h3>
                 <StaffBars data={staffSeries} />
               </div>
             )}
             {hasInventory && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bs-card p-6">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4">Envanter Dağılımı (kategori)</h3>
                 <DistributionPie data={inventorySeries} />
               </div>

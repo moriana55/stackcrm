@@ -28,7 +28,7 @@ export default function RangeFilter({ current }: { current: string }) {
           onClick={() => set(o.value)}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
             current === o.value
-              ? "bg-rose-50 border-rose-200 text-rose-700"
+              ? "bg-[var(--accent-soft)] border-[var(--accent-ring)] text-[var(--accent-hover)]"
               : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
           }`}
         >

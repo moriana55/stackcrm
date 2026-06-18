@@ -5,7 +5,10 @@ import {
   LineChart, Line, PieChart, Pie, Cell, Legend,
 } from "recharts";
 
-const COLORS = ["#e11d48", "#111827", "#6366f1", "#f59e0b", "#10b981", "#8b5cf6", "#0ea5e9", "#ec4899"];
+const ACCENT = "#b4496a";
+const COLORS = [ACCENT, "#1c1a23", "#6366f1", "#f59e0b", "#10b981", "#8b5cf6", "#0ea5e9", "#ec4899"];
+const axisTick = { fontSize: 12, fill: "#9ca3af" };
+const tooltipStyle = { borderRadius: 12, border: "1px solid #ececef", boxShadow: "0 4px 16px rgba(28,26,35,0.08)", fontSize: 13 };
 
 const tl = (v: number) => `₺${Number(v).toLocaleString("tr-TR")}`;
 
@@ -24,11 +27,11 @@ export function RevenueBars({ data }: { data: { label: string; value: number }[]
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-        <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#9ca3af" }} />
-        <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} tickFormatter={(v) => `₺${(v / 1000).toFixed(0)}b`} width={48} />
-        <Tooltip formatter={(v) => [tl(Number(v)), "Gelir"]} />
-        <Bar dataKey="value" fill="#e11d48" radius={[4, 4, 0, 0]} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+        <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} />
+        <YAxis tick={axisTick} axisLine={false} tickLine={false} tickFormatter={(v) => `₺${(v / 1000).toFixed(0)}b`} width={48} />
+        <Tooltip cursor={{ fill: "#f9fafb" }} contentStyle={tooltipStyle} formatter={(v) => [tl(Number(v)), "Gelir"]} />
+        <Bar dataKey="value" fill={ACCENT} radius={[6, 6, 0, 0]} maxBarSize={48} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -40,13 +43,13 @@ export function FillLine({ data }: { data: { label: string; booked: number; capa
   return (
     <ResponsiveContainer width="100%" height={240}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-        <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#9ca3af" }} />
-        <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} allowDecimals={false} width={32} />
-        <Tooltip />
+        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+        <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} />
+        <YAxis tick={axisTick} axisLine={false} tickLine={false} allowDecimals={false} width={32} />
+        <Tooltip contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Line type="monotone" dataKey="booked" name="Dolu" stroke="#e11d48" strokeWidth={2} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="capacity" name="Kapasite" stroke="#9ca3af" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+        <Line type="monotone" dataKey="booked" name="Dolu" stroke={ACCENT} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+        <Line type="monotone" dataKey="capacity" name="Kapasite" stroke="#c7c5cc" strokeWidth={2} strokeDasharray="4 4" dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -59,10 +62,10 @@ export function StaffBars({ data, valueLabel = "Gelir", money = true }: { data: 
     <ResponsiveContainer width="100%" height={Math.max(240, data.length * 40)}>
       <BarChart data={data} layout="vertical" margin={{ left: 8 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
-        <XAxis type="number" tick={{ fontSize: 12, fill: "#9ca3af" }} tickFormatter={money ? (v) => `₺${(v / 1000).toFixed(0)}b` : undefined} />
-        <YAxis type="category" dataKey="label" tick={{ fontSize: 12, fill: "#374151" }} width={110} />
-        <Tooltip formatter={(v) => [money ? tl(Number(v)) : Number(v), valueLabel]} />
-        <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} />
+        <XAxis type="number" tick={axisTick} axisLine={false} tickLine={false} tickFormatter={money ? (v) => `₺${(v / 1000).toFixed(0)}b` : undefined} />
+        <YAxis type="category" dataKey="label" tick={{ fontSize: 12, fill: "#374151" }} axisLine={false} tickLine={false} width={110} />
+        <Tooltip cursor={{ fill: "#f9fafb" }} contentStyle={tooltipStyle} formatter={(v) => [money ? tl(Number(v)) : Number(v), valueLabel]} />
+        <Bar dataKey="value" fill={ACCENT} radius={[0, 6, 6, 0]} maxBarSize={28} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -74,10 +77,10 @@ export function DistributionPie({ data }: { data: { name: string; value: number 
   return (
     <ResponsiveContainer width="100%" height={240}>
       <PieChart>
-        <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+        <Pie data={data} cx="50%" cy="50%" innerRadius={52} outerRadius={82} paddingAngle={3} dataKey="value" stroke="#fff" strokeWidth={2} label={({ name, value }) => `${name}: ${value}`}>
           {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
         </Pie>
-        <Tooltip />
+        <Tooltip contentStyle={tooltipStyle} />
       </PieChart>
     </ResponsiveContainer>
   );

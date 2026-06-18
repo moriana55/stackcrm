@@ -130,66 +130,80 @@ export default function BookingForm({ tenantId, accent, services, staff, schedul
 
   if (step === "done") {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-        <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: accent + "15" }}>
-          <span className="material-symbols-outlined text-3xl" style={{ color: accent }}>schedule</span>
+      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-12 text-center bs-animate-in">
+        <div className="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center" style={{ backgroundColor: accent + "18" }}>
+          <span className="material-symbols-outlined text-3xl" style={{ color: accent }}>check_circle</span>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Talebiniz alındı!</h2>
-        <p className="text-gray-500 mb-1">{selectedService?.name} — {new Date(date + "T12:00:00").toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" })}</p>
-        <p className="text-gray-500">saat {time}{selectedStaff ? ` · ${selectedStaff.name}` : ""}</p>
-        <p className="text-sm text-gray-400 mt-6">Randevunuz <strong>onay bekliyor</strong>. Onaylandığında sizi bilgilendireceğiz.</p>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Talebiniz alındı</h2>
+        <p className="text-gray-600 mb-1">{selectedService?.name} — {new Date(date + "T12:00:00").toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" })}</p>
+        <p className="text-gray-600">saat {time}{selectedStaff ? ` · ${selectedStaff.name}` : ""}</p>
+        <p className="text-sm text-gray-500 mt-6 max-w-sm mx-auto">Randevunuz <strong className="text-gray-700">onay bekliyor</strong>. Onaylandığında sizi bilgilendireceğiz.</p>
       </div>
     );
   }
 
+  const STEP_LABELS: Record<Step, string> = { service: "Hizmet", staff: "Uzman", datetime: "Tarih", info: "Bilgiler", done: "" };
+  const stepOrder: Step[] = ["service", "staff", "datetime", "info"];
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {/* Progress */}
-      <div className="flex items-center gap-2 justify-center">
-        {(["service", "staff", "datetime", "info"] as Step[]).map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                step === s ? "text-white" : i < ["service", "staff", "datetime", "info"].indexOf(step) ? "bg-gray-200 text-gray-600" : "bg-gray-100 text-gray-400"
-              }`}
-              style={step === s ? { backgroundColor: accent } : undefined}
-            >
-              {i + 1}
+      <div className="flex items-center justify-center">
+        {stepOrder.map((s, i) => {
+          const currentIdx = stepOrder.indexOf(step);
+          const isCurrent = step === s;
+          const isDone = i < currentIdx;
+          return (
+            <div key={s} className="flex items-center">
+              <div className="flex flex-col items-center gap-1.5">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                    isCurrent ? "text-white shadow-sm" : isDone ? "text-white" : "bg-gray-100 text-gray-400"
+                  }`}
+                  style={isCurrent ? { backgroundColor: accent } : isDone ? { backgroundColor: accent, opacity: 0.55 } : undefined}
+                >
+                  {isDone ? <span className="material-symbols-outlined text-[16px]">check</span> : i + 1}
+                </div>
+                <span className={`text-[10px] font-medium ${isCurrent ? "text-gray-700" : "text-gray-400"}`}>{STEP_LABELS[s]}</span>
+              </div>
+              {i < 3 && <div className={`w-10 h-px mb-5 ${isDone ? "" : "bg-gray-200"}`} style={isDone ? { backgroundColor: accent, opacity: 0.4 } : undefined} />}
             </div>
-            {i < 3 && <div className="w-8 h-px bg-gray-200" />}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Step: Service */}
       {step === "service" && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6 bs-animate-in">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Hizmet seçin</h2>
           {Object.entries(grouped).map(([cat, items]) => (
-            <div key={cat} className="mb-4">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{cat}</h3>
+            <div key={cat} className="mb-4 last:mb-0">
+              <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{cat}</h3>
               <div className="flex flex-col gap-2">
-                {items.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => { setServiceId(s.id); setStep("staff"); }}
-                    className={`text-left p-4 rounded-xl border transition-colors hover:border-gray-400 ${serviceId === s.id ? "border-2" : "border-gray-200"}`}
-                    style={serviceId === s.id ? { borderColor: accent } : undefined}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-medium text-gray-900 text-sm">{s.name}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          {s.duration >= 60 ? `${Math.floor(s.duration / 60)}h${s.duration % 60 ? ` ${s.duration % 60}m` : ""}` : `${s.duration}min`}
-                          {s.description && ` · ${s.description}`}
+                {items.map((s) => {
+                  const sel = serviceId === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => { setServiceId(s.id); setStep("staff"); }}
+                      className={`group text-left p-4 rounded-xl border transition-all hover:shadow-sm ${sel ? "ring-2" : "border-gray-200 hover:border-gray-300"}`}
+                      style={sel ? { borderColor: accent, boxShadow: `0 0 0 2px ${accent}` } : undefined}
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-900 text-sm">{s.name}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {s.duration >= 60 ? `${Math.floor(s.duration / 60)}sa${s.duration % 60 ? ` ${s.duration % 60}dk` : ""}` : `${s.duration}dk`}
+                            {s.description && ` · ${s.description}`}
+                          </div>
                         </div>
+                        <span className="font-semibold text-gray-900 text-sm whitespace-nowrap tabular-nums">
+                          ${Number(s.price).toFixed(0)}{s.price_max ? `–$${Number(s.price_max).toFixed(0)}` : ""}
+                        </span>
                       </div>
-                      <span className="font-semibold text-gray-900 text-sm whitespace-nowrap ml-4">
-                        ${Number(s.price).toFixed(0)}{s.price_max ? `–$${Number(s.price_max).toFixed(0)}` : ""}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -198,27 +212,32 @@ export default function BookingForm({ tenantId, accent, services, staff, schedul
 
       {/* Step: Staff */}
       {step === "staff" && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6 bs-animate-in">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Uzman seçin</h2>
           <div className="flex flex-col gap-2">
             <button
               onClick={() => { setStaffId(null); setStep("datetime"); }}
-              className="text-left p-4 rounded-xl border border-gray-200 hover:border-gray-400 transition-colors"
+              className="text-left p-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all flex items-center gap-3"
             >
-              <div className="font-medium text-gray-900 text-sm">Fark etmez</div>
-              <div className="text-xs text-gray-500">Müsait olan herhangi bir uzman</div>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: accent + "15" }}>
+                <span className="material-symbols-outlined text-[20px]" style={{ color: accent }}>groups</span>
+              </div>
+              <div>
+                <div className="font-medium text-gray-900 text-sm">Fark etmez</div>
+                <div className="text-xs text-gray-500">Müsait olan herhangi bir uzman</div>
+              </div>
             </button>
             {availableStaff.map((s) => (
               <button
                 key={s.id}
                 onClick={() => { setStaffId(s.id); setStep("datetime"); }}
-                className="text-left p-4 rounded-xl border border-gray-200 hover:border-gray-400 transition-colors flex items-center gap-3"
+                className="text-left p-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all flex items-center gap-3"
               >
                 {s.photo ? (
-                  <img src={s.photo} alt={s.name} className="w-10 h-10 rounded-full object-cover" />
+                  <img src={s.photo} alt={s.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-gray-400">person</span>
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-gray-400 text-[20px]">person</span>
                   </div>
                 )}
                 <div>
@@ -228,22 +247,23 @@ export default function BookingForm({ tenantId, accent, services, staff, schedul
               </button>
             ))}
           </div>
-          <button onClick={() => setStep("service")} className="mt-4 text-sm text-gray-500 hover:text-gray-700">Geri</button>
+          <button onClick={() => setStep("service")} className="mt-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors"><span className="material-symbols-outlined text-base">arrow_back</span>Geri</button>
         </div>
       )}
 
       {/* Step: Date & Time */}
       {step === "datetime" && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6 bs-animate-in">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Tarih ve saat seçin</h2>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tarih</label>
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Tarih</label>
             <input
               type="date"
               min={minDate}
               value={date}
               onChange={(e) => { setDate(e.target.value); setTime(""); }}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-400 focus:ring-2"
+              style={{ ["--tw-ring-color" as string]: accent + "33" }}
             />
           </div>
           {date && (
@@ -251,28 +271,33 @@ export default function BookingForm({ tenantId, accent, services, staff, schedul
               <label className="block text-sm font-medium text-gray-700 mb-2">Müsait saatler</label>
               {availableSlots.length > 0 ? (
                 <div className="grid grid-cols-4 gap-2">
-                  {availableSlots.map((slot) => (
-                    <button
-                      key={slot}
-                      onClick={() => setTime(slot)}
-                      className={`py-2 rounded-lg text-sm font-medium transition-colors ${time === slot ? "text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                      style={time === slot ? { backgroundColor: accent } : undefined}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                  {availableSlots.map((slot) => {
+                    const sel = time === slot;
+                    return (
+                      <button
+                        key={slot}
+                        onClick={() => setTime(slot)}
+                        className={`py-2 rounded-lg text-sm font-medium transition-all tabular-nums ${sel ? "text-white shadow-sm" : "bg-gray-50 text-gray-700 border border-gray-100 hover:border-gray-300 hover:bg-gray-100"}`}
+                        style={sel ? { backgroundColor: accent } : undefined}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">Bu tarih için müsait saat yok.</p>
+                <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 text-center">
+                  <p className="text-sm text-gray-500">Bu tarih için müsait saat yok. Başka bir gün deneyin.</p>
+                </div>
               )}
             </div>
           )}
-          <div className="flex items-center gap-3 mt-4">
-            <button onClick={() => setStep("staff")} className="text-sm text-gray-500 hover:text-gray-700">Geri</button>
+          <div className="flex items-center gap-3 mt-5">
+            <button onClick={() => setStep("staff")} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors"><span className="material-symbols-outlined text-base">arrow_back</span>Geri</button>
             {time && (
               <button
                 onClick={() => setStep("info")}
-                className="ml-auto py-2.5 px-6 text-white rounded-xl text-sm font-medium"
+                className="ml-auto py-2.5 px-6 text-white rounded-xl text-sm font-medium shadow-sm transition-opacity hover:opacity-90"
                 style={{ backgroundColor: accent }}
               >
                 Devam
@@ -284,47 +309,48 @@ export default function BookingForm({ tenantId, accent, services, staff, schedul
 
       {/* Step: Contact Info */}
       {step === "info" && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6 bs-animate-in">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Bilgileriniz</h2>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3.5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad *</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm outline-none" placeholder="Adınız" />
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Ad Soyad *</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-400 focus:ring-2" style={{ ["--tw-ring-color" as string]: accent + "33" }} placeholder="Adınız" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm outline-none" placeholder="0555 123 45 67" />
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Telefon</label>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-400 focus:ring-2" style={{ ["--tw-ring-color" as string]: accent + "33" }} placeholder="0555 123 45 67" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
-              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm outline-none" placeholder="ornek@eposta.com" />
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">E-posta</label>
+              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none transition focus:border-gray-400 focus:ring-2" style={{ ["--tw-ring-color" as string]: accent + "33" }} placeholder="ornek@eposta.com" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Not</label>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm outline-none resize-y" placeholder="Özel istekleriniz..." />
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Not</label>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm outline-none resize-y transition focus:border-gray-400 focus:ring-2" style={{ ["--tw-ring-color" as string]: accent + "33" }} placeholder="Özel istekleriniz..." />
             </div>
           </div>
 
           {/* Summary */}
-          <div className="mt-4 p-4 rounded-xl bg-gray-50">
+          <div className="mt-5 p-4 rounded-xl border" style={{ backgroundColor: accent + "0a", borderColor: accent + "22" }}>
+            <div className="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: accent }}>Randevu özeti</div>
             <div className="text-sm font-medium text-gray-900">{selectedService?.name}</div>
             <div className="text-xs text-gray-500 mt-1">
               {new Date(date + "T12:00:00").toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" })} · {time}
               {selectedStaff ? ` · ${selectedStaff.name}` : ""}
-              {" · "}{selectedService && selectedService.duration >= 60 ? `${Math.floor(selectedService.duration / 60)}h${selectedService.duration % 60 ? ` ${selectedService.duration % 60}m` : ""}` : `${selectedService?.duration}min`}
+              {" · "}{selectedService && selectedService.duration >= 60 ? `${Math.floor(selectedService.duration / 60)}sa${selectedService.duration % 60 ? ` ${selectedService.duration % 60}dk` : ""}` : `${selectedService?.duration}dk`}
             </div>
-            <div className="text-sm font-semibold text-gray-900 mt-1">${Number(selectedService?.price ?? 0).toFixed(0)}</div>
+            <div className="text-sm font-semibold text-gray-900 mt-1.5 tabular-nums">${Number(selectedService?.price ?? 0).toFixed(0)}</div>
           </div>
 
           <p className="text-xs text-gray-400 mt-3">Telefon veya e-posta adresinizden en az birini girmeniz gerekir.</p>
-          {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+          {error && <p className="text-sm text-red-500 mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-base">error</span>{error}</p>}
 
-          <div className="flex items-center gap-3 mt-4">
-            <button onClick={() => setStep("datetime")} className="text-sm text-gray-500 hover:text-gray-700">Geri</button>
+          <div className="flex items-center gap-3 mt-5">
+            <button onClick={() => setStep("datetime")} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors"><span className="material-symbols-outlined text-base">arrow_back</span>Geri</button>
             <button
               onClick={handleSubmit}
               disabled={!name.trim() || (!phone.trim() && !email.trim()) || submitting}
-              className="ml-auto py-2.5 px-6 text-white rounded-xl text-sm font-medium disabled:opacity-50"
+              className="ml-auto py-2.5 px-6 text-white rounded-xl text-sm font-medium shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: accent }}
             >
               {submitting ? "Gönderiliyor..." : "Randevu Talebi Gönder"}

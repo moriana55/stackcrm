@@ -5,8 +5,8 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { MODULES } from "@/config/modules";
 import { RevenueChart, AppointmentChart, StatusPieChart } from "@/components/charts";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+const DAYS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   if (!tenant) redirect("/onboarding");
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const greeting = hour < 12 ? "Günaydın" : hour < 18 ? "İyi günler" : "İyi akşamlar";
 
   const hasSales = tenant.enabled_modules.includes("sales");
   const hasAppointments = tenant.enabled_modules.includes("appointments");
@@ -35,10 +35,10 @@ export default async function DashboardPage() {
   ]);
 
   const stats = [
-    { label: "Customers", value: customerCount ?? 0, icon: "groups", href: "/customers", module: "crm" as const },
-    { label: "Appointments", value: appointmentCount ?? 0, icon: "event", href: "/appointments", module: "appointments" as const },
-    { label: "Orders", value: orderCount ?? 0, icon: "receipt_long", href: "/orders", module: "sales" as const },
-    { label: "Products", value: productCount ?? 0, icon: "checkroom", href: "/products", module: "inventory" as const },
+    { label: "Müşteriler", value: customerCount ?? 0, icon: "groups", href: "/customers", module: "crm" as const },
+    { label: "Randevular", value: appointmentCount ?? 0, icon: "event", href: "/appointments", module: "appointments" as const },
+    { label: "Siparişler", value: orderCount ?? 0, icon: "receipt_long", href: "/orders", module: "sales" as const },
+    { label: "Ürünler", value: productCount ?? 0, icon: "checkroom", href: "/products", module: "inventory" as const },
   ].filter((s) => tenant.enabled_modules.includes(s.module));
 
   // Revenue data (6 months)
@@ -108,54 +108,57 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">{greeting} 👋</h1>
-        <p className="text-gray-500 mt-1">{tenant.name} — {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+        <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 tracking-tight">{greeting}</h1>
+        <p className="text-gray-500 mt-1">{tenant.name} — {new Date().toLocaleDateString("tr-TR", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-8">
         {stats.map((stat) => (
-          <Link key={stat.label} href={stat.href} className="bg-white rounded-2xl border border-gray-200 p-5 lg:p-6 hover:shadow-md transition-shadow">
-            <span className="material-symbols-outlined text-2xl text-gray-400 mb-3 block">{stat.icon}</span>
-            <div className="text-2xl lg:text-3xl font-bold text-gray-900">{stat.value}</div>
-            <div className="text-sm text-gray-500 mt-1">{stat.label}</div>
+          <Link key={stat.label} href={stat.href} className="bs-card group p-5 lg:p-6 hover:shadow-md hover:border-gray-300 transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] material-symbols-outlined text-[20px]">{stat.icon}</span>
+              <span className="material-symbols-outlined text-gray-300 text-lg opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+            </div>
+            <div className="text-2xl lg:text-3xl font-semibold text-gray-900 tabular-nums">{stat.value}</div>
+            <div className="text-sm text-gray-500 mt-0.5">{stat.label}</div>
           </Link>
         ))}
       </div>
 
       {/* Charts */}
       {(hasSales || hasAppointments) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
           {hasSales && revenueData.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="bs-card p-6">
               <RevenueChart data={revenueData} />
             </div>
           )}
           {hasAppointments && appointmentData.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="bs-card p-6">
               <AppointmentChart data={appointmentData} />
             </div>
           )}
           {hasSales && orderStatusData.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <StatusPieChart data={orderStatusData} title="Order Status" />
+            <div className="bs-card p-6">
+              <StatusPieChart data={orderStatusData} title="Sipariş Durumu" />
             </div>
           )}
         </div>
       )}
 
       {/* Active Modules */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Modules</h2>
+      <div className="bs-card p-6">
+        <h2 className="text-base font-semibold text-gray-900 mb-4">Etkin modüller</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {tenant.enabled_modules.map((moduleId) => {
             const mod = MODULES[moduleId];
             if (!mod) return null;
             return (
-              <Link key={moduleId} href={mod.navItems[0]?.href ?? "#"} className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all">
-                <span className="material-symbols-outlined text-xl text-gray-600">{mod.icon}</span>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">{mod.name}</div>
-                  <div className="text-xs text-gray-400">{mod.description}</div>
+              <Link key={moduleId} href={mod.navItems[0]?.href ?? "#"} className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-[var(--accent-ring)] hover:bg-[var(--accent-soft)]/40 transition-all">
+                <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-gray-50 text-gray-500 material-symbols-outlined text-[20px]">{mod.icon}</span>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{mod.name}</div>
+                  <div className="text-xs text-gray-400 truncate">{mod.description}</div>
                 </div>
               </Link>
             );
