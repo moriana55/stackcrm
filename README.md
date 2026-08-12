@@ -58,7 +58,7 @@ npm audit
 
 ## Local setup
 
-Requirements: Node.js 20+, npm, and a Supabase project.
+Requirements: Node.js 24+, npm, and a Supabase project.
 
 ```bash
 git clone https://github.com/moriana55/stackcrm.git
