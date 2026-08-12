@@ -23,10 +23,8 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Auth bypass — dev mode
-  return supabaseResponse;
-
+  // Refresh signed session cookies. Pages and API handlers enforce their own
+  // tenant-aware authorization so public booking and signature routes remain reachable.
+  await supabase.auth.getUser();
   return supabaseResponse;
 }

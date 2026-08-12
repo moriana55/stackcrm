@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Booking = {
@@ -18,19 +18,18 @@ type Booking = {
   tenant_members: { display_name: string } | null;
 };
 
+type BookingStatus = Booking["status"];
+
 export default function BookingsPage() {
-  const supabase = createClient();
+  const [supabase] = useState(createClient);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  async function fetchBookings() {
+  const fetchBookings = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -53,15 +52,20 @@ export default function BookingsPage() {
         .order("start_time", { ascending: false });
 
       if (error) throw error;
-      setBookings((data as any) || []);
+      setBookings((data ?? []) as unknown as Booking[]);
     } catch (err) {
       console.error("Error fetching bookings:", err);
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
 
-  async function updateStatus(id: string, newStatus: string) {
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchBookings(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchBookings]);
+
+  async function updateStatus(id: string, newStatus: BookingStatus) {
     setUpdatingId(id);
     try {
       const { error } = await supabase
@@ -71,7 +75,7 @@ export default function BookingsPage() {
 
       if (error) throw error;
       setBookings((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status: newStatus as any } : b))
+        prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
       );
     } catch (err) {
       console.error("Error updating status:", err);

@@ -11,6 +11,16 @@ const tl = (v: number) => `₺${Number(v || 0).toLocaleString("tr-TR")}`;
 const TR_DAYS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
 type Props = { searchParams: Promise<{ range?: string }> };
+type OrderRow = { created_at: string; discounted_total: number; status: string };
+type AppointmentRow = { appointment_date: string; status: string };
+type BookingRow = {
+  amount: number;
+  member_id: string | null;
+  status: string;
+  booking_date: string;
+  tenant_members: { display_name: string | null } | { display_name: string | null }[] | null;
+};
+type ProductRow = { category: string | null; stock_quantity: number; price: number };
 
 export default async function AnalyticsPage({ searchParams }: Props) {
   const supabase = await createClient();
@@ -43,22 +53,22 @@ export default async function AnalyticsPage({ searchParams }: Props) {
   const [ordersRes, apptRes, bookingsRes, productsRes] = await Promise.all([
     hasSales
       ? supabase.from("orders").select("created_at, discounted_total, status").gte("created_at", sinceISO)
-      : Promise.resolve({ data: [] as any[] }),
+      : Promise.resolve({ data: [] as OrderRow[] }),
     hasAppointments
       ? supabase.from("appointments").select("appointment_date, status").gte("appointment_date", sinceISO)
-      : Promise.resolve({ data: [] as any[] }),
+      : Promise.resolve({ data: [] as AppointmentRow[] }),
     hasBooking
       ? supabase.from("bookings").select("amount, member_id, status, booking_date, tenant_members(display_name)").gte("booking_date", sinceDate)
-      : Promise.resolve({ data: [] as any[] }),
+      : Promise.resolve({ data: [] as BookingRow[] }),
     hasInventory
       ? supabase.from("products").select("category, stock_quantity, price")
-      : Promise.resolve({ data: [] as any[] }),
+      : Promise.resolve({ data: [] as ProductRow[] }),
   ]);
 
-  const orders = (ordersRes.data ?? []) as { created_at: string; discounted_total: number; status: string }[];
-  const appts = (apptRes.data ?? []) as { appointment_date: string; status: string }[];
-  const bookings = (bookingsRes.data ?? []) as { amount: number; member_id: string | null; status: string; booking_date: string; tenant_members: { display_name: string | null } | { display_name: string | null }[] | null }[];
-  const products = (productsRes.data ?? []) as { category: string | null; stock_quantity: number; price: number }[];
+  const orders = (ordersRes.data ?? []) as OrderRow[];
+  const appts = (apptRes.data ?? []) as AppointmentRow[];
+  const bookings = (bookingsRes.data ?? []) as BookingRow[];
+  const products = (productsRes.data ?? []) as ProductRow[];
 
   // ── KPI'lar ────────────────────────────────────────────────────────────────
   const totalRevenue = orders.reduce((s, o) => s + Number(o.discounted_total || 0), 0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Member = {
@@ -30,7 +30,7 @@ const DAYS = [
 ];
 
 export default function SchedulePage() {
-  const supabase = createClient();
+  const [supabase] = useState(createClient);
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -38,17 +38,8 @@ export default function SchedulePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    fetchStaff();
-  }, []);
-
-  useEffect(() => {
-    if (selectedMemberId) {
-      fetchSchedules(selectedMemberId);
-    }
-  }, [selectedMemberId]);
-
-  async function fetchStaff() {
+  const fetchStaff = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const { data: tenantData } = await supabase
@@ -76,9 +67,10 @@ export default function SchedulePage() {
       console.error("Error fetching staff:", err);
       setLoading(false);
     }
-  }
+  }, [supabase]);
 
-  async function fetchSchedules(memberId: string) {
+  const fetchSchedules = useCallback(async (memberId: string) => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -109,7 +101,19 @@ export default function SchedulePage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchStaff(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchStaff]);
+
+  useEffect(() => {
+    if (selectedMemberId) {
+      const timer = window.setTimeout(() => void fetchSchedules(selectedMemberId), 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [fetchSchedules, selectedMemberId]);
 
   async function saveSchedule() {
     setSaving(true);
@@ -138,16 +142,16 @@ export default function SchedulePage() {
 
       setMessage("Working hours saved successfully!");
       setTimeout(() => setMessage(""), 3000);
-      fetchSchedules(selectedMemberId);
-    } catch (err: any) {
+      void fetchSchedules(selectedMemberId);
+    } catch (err: unknown) {
       console.error("Error saving schedule:", err);
-      setMessage(`Error: ${err.message}`);
+      setMessage(`Error: ${err instanceof Error ? err.message : "Schedule could not be saved"}`);
     } finally {
       setSaving(false);
     }
   }
 
-  function handleScheduleChange(dayOfWeek: number, field: keyof Schedule, value: any) {
+  function handleScheduleChange<K extends keyof Schedule>(dayOfWeek: number, field: K, value: Schedule[K]) {
     setSchedules((prev) =>
       prev.map((s) => (s.day_of_week === dayOfWeek ? { ...s, [field]: value } : s))
     );

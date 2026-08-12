@@ -37,7 +37,7 @@ export default function LandingPage() {
               See Features
             </a>
           </div>
-          <p className="text-sm text-gray-400 mt-4">Free plan available · No credit card required</p>
+          <p className="text-sm text-gray-400 mt-4">Local demo · Optional integrations are environment-gated</p>
         </div>
       </section>
 
@@ -45,9 +45,9 @@ export default function LandingPage() {
       <section className="py-12 bg-gray-50">
         <div className="max-w-4xl mx-auto px-6 grid grid-cols-3 gap-8 text-center">
           {[
-            { value: "10+", label: "Modules" },
-            { value: "5 min", label: "Setup Time" },
-            { value: "$0", label: "To Start" },
+            { value: "Modular", label: "Feature Packs" },
+            { value: "Scoped", label: "Tenant Data" },
+            { value: "Tested", label: "Core Rules" },
           ].map((s) => (
             <div key={s.label}>
               <div className="text-3xl font-bold text-gray-900">{s.value}</div>
@@ -134,7 +134,7 @@ export default function LandingPage() {
       <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-gray-900">Ready to modernize your bridal shop?</h2>
-          <p className="text-gray-500 mt-3 text-lg">Join hundreds of bridal boutiques using BridalStack.</p>
+          <p className="text-gray-500 mt-3 text-lg">Explore the prototype and review its security model before connecting a live workspace.</p>
           <Link href="/login" className="inline-block mt-8 px-8 py-3.5 bg-gray-900 text-white rounded-xl text-base font-medium hover:bg-gray-800 transition-colors">
             Start Free Today →
           </Link>

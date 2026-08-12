@@ -5,6 +5,17 @@ import { deriveStatus, reminderFor } from "@/lib/installments";
 
 export const dynamic = "force-dynamic";
 
+type InstallmentQueryRow = {
+  id: string;
+  tenant_id: string;
+  amount: number;
+  due_date: string;
+  paid_at: string | null;
+  status: "pending" | "due" | "overdue" | "paid" | "cancelled";
+  customers: { name: string; email: string | null } | { name: string; email: string | null }[] | null;
+  tenants: { name: string } | { name: string }[] | null;
+};
+
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║  Taksit otomasyonu cron'u — CRON_SECRET korumalı, fail-closed.            ║
 // ║  1) Ödenmemiş taksitlerin durumunu (pending→due→overdue) günceller.       ║
@@ -46,7 +57,7 @@ export async function GET(req: NextRequest) {
   let emailsSent = 0;
 
   for (const inst of installments ?? []) {
-    const row = inst as any;
+    const row = inst as unknown as InstallmentQueryRow;
 
     // 1) Durum geçişi
     const next = deriveStatus({ due_date: row.due_date, paid_at: row.paid_at, status: row.status }, now);

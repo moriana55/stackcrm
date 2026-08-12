@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { stripe, STRIPE_PRICE_IDS } from "@/lib/stripe";
 import { getCurrentTenant } from "@/lib/tenant";
-import { PackId, PACKS, calculateMonthlyPrice } from "@/config/modules";
+import { PackId, PACKS } from "@/config/modules";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();

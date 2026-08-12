@@ -6,6 +6,17 @@ import { createService, deleteService, toggleService } from "./actions";
 const CATEGORIES = ["Hair", "Nails", "Skin", "Massage", "Makeup", "Tattoo", "Barber", "Lashes", "Waxing", "Other"];
 const DURATIONS = [15, 30, 45, 60, 90, 120, 150, 180];
 
+type ServiceRow = {
+  id: string;
+  name: string;
+  category: string | null;
+  duration: number;
+  description: string | null;
+  price: number;
+  price_max: number | null;
+  is_active: boolean;
+};
+
 export default async function ServicesPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -14,7 +25,7 @@ export default async function ServicesPage() {
   if (!tenant) redirect("/onboarding");
 
   const { data: services } = await supabase.from("services").select("*").eq("tenant_id", tenant.id).order("sort_order").order("name");
-  const list = services ?? [];
+  const list = (services ?? []) as ServiceRow[];
 
   const grouped = list.reduce((acc, s) => {
     const cat = s.category || "Other";
@@ -75,7 +86,7 @@ export default async function ServicesPage() {
         <div className="lg:col-span-2">
           {Object.keys(grouped).length > 0 ? (
             <div className="flex flex-col gap-6">
-              {(Object.entries(grouped) as [string, any[]][]).map(([category, items]) => (
+              {Object.entries(grouped).map(([category, items]) => (
                 <div key={category}>
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{category}</h3>
                   <div className="flex flex-col gap-2">
