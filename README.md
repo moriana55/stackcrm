@@ -9,6 +9,12 @@ A multi-tenant CRM prototype for bridal retail operations. It brings customer re
 
 > Portfolio status: the core domain rules, TypeScript build, lint, and dependency audit are verified locally. Live Supabase, Stripe, Resend, and AI integrations require owner-provided credentials and were not exercised during the repository audit.
 
+## Product evidence
+
+[![BridalStack landing experience](docs/screenshots/landing-desktop.png)](docs/screenshots/landing-desktop.png)
+
+Current default-branch landing experience captured locally. External services remain environment-gated; the image is UI evidence, not proof of a hosted production deployment.
+
 ## Why this project exists
 
 Bridal retail combines long customer journeys with scheduled fittings, physical inventory, deposits, installments, contracts, and staff-specific access. BridalStack explores how those workflows can share one tenant-scoped operating model without turning every user into an administrator.
