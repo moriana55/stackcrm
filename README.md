@@ -2,7 +2,7 @@
 
 A multi-tenant CRM prototype for bridal retail operations. It brings customer records, appointments, sales, inventory, contracts, public booking, installments, and role-aware workflows into one Next.js application.
 
-[![CI](https://github.com/moriana55/stackcrm/actions/workflows/ci.yml/badge.svg)](https://github.com/moriana55/stackcrm/actions/workflows/ci.yml)
+[![CI](https://github.com/yigiterturk-dev/stackcrm/actions/workflows/ci.yml/badge.svg)](https://github.com/yigiterturk-dev/stackcrm/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 [![Tests](https://img.shields.io/badge/tests-20%20passing-16a34a)](tests)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -67,7 +67,7 @@ npm audit
 Requirements: Node.js 24+, npm, and a Supabase project.
 
 ```bash
-git clone https://github.com/moriana55/stackcrm.git
+git clone https://github.com/yigiterturk-dev/stackcrm.git
 cd stackcrm
 npm ci
 cp .env.example .env.local
